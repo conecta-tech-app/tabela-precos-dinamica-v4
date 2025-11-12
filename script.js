@@ -229,31 +229,42 @@ function setupCalculatorInputs() {
 // --- LÓGICA DE CÁLCULO DE ROI ---
 
 function calculateROI() {
-	const monthlyPurchases = parseFloat(document.getElementById('input-monthly-purchases').value) || 0;
+	// Novos inputs
+	const totalStock = parseFloat(document.getElementById('input-total-stock').value) || 0;
+	const lostSales = parseFloat(document.getElementById('input-lost-sales').value) || 0;
 
-	if (monthlyPurchases <= 0) {
-		alert('Por favor, insira um valor válido para o Valor Médio Mensal de Compras/Vendas.');
+	if (totalStock <= 0 && lostSales <= 0) {
+		alert('Por favor, insira um valor válido para o Valor Total do Estoque ou para o Valor Mensal de Vendas Perdidas.');
 		return;
 	}
 
-	// Percentuais de perda (baseado no slide)
+	// Percentuais de perda (baseado no slide e na nova lógica)
+	// 1. Excesso de Estoque: Aplicado sobre o Valor Total do Estoque (Ex: 27% do estoque está parado)
 	const excessPercentage = 0.27;     // 27%
+	// 2. Ruptura de Estoque: Aplicado sobre o Valor Mensal de Vendas Perdidas (Ex: 12% das vendas perdidas)
 	const rupturePercentage = 0.12;    // 12%
+	// 3. Margem Negativa: Aplicado sobre o Valor Mensal de Vendas Perdidas (Ex: 13% de perda de margem)
 	const marginPercentage = 0.13;     // 13%
+	// 4. Baixa Eficiência: Estimativa de custo operacional mensal (Ex: 20% do custo de folha de pagamento de compras/estoque)
+	// Para simplificar e manter o cálculo no escopo do input, vamos aplicar um percentual de custo operacional sobre o total de vendas perdidas, como proxy de ineficiência.
 	const efficiencyPercentage = 0.20; // 20%
 
 	// Iterar sobre cada plano
 	['standard', 'full', 'enterprise'].forEach(plan => {
 		// --- CÁLCULO DO CUSTO DE NÃO AGIR (ANUAL) ---
-		const monthlyExcessCost = monthlyPurchases * excessPercentage;
-		const monthlyRuptureCost = monthlyPurchases * rupturePercentage;
-		const monthlyMarginCost = monthlyPurchases * marginPercentage;
-		const monthlyEfficiencyCost = monthlyPurchases * efficiencyPercentage;
 
-		const annualExcessCost = monthlyExcessCost * 12;
-		const annualRuptureCost = monthlyRuptureCost * 12;
-		const annualMarginCost = monthlyMarginCost * 12;
-		const annualEfficiencyCost = monthlyEfficiencyCost * 12;
+		// 1. Custo Anual de Excesso de Estoque (Capital Imobilizado)
+		// Consideramos o custo de capital (ex: 10% ao ano) sobre o valor do excesso. Usaremos 10% como proxy.
+		const annualExcessCost = (totalStock * excessPercentage) * 0.10;
+
+		// 2. Custo Anual de Ruptura de Estoque (Vendas Perdidas)
+		const annualRuptureCost = (lostSales * rupturePercentage) * 12;
+
+		// 3. Custo Anual de Margem Negativa (Perda de Margem em Vendas)
+		const annualMarginCost = (lostSales * marginPercentage) * 12;
+
+		// 4. Custo Anual de Baixa Eficiência (Custo Operacional)
+		const annualEfficiencyCost = (lostSales * efficiencyPercentage) * 12;
 
 		const totalCostOfInaction = annualExcessCost + annualRuptureCost + annualMarginCost + annualEfficiencyCost;
 
@@ -289,8 +300,8 @@ function calculateROI() {
 	const annualMonthlyCost = monthlyCost * 12;
 	const totalKenitInvestment = setupCost + annualMonthlyCost;
 
-	const monthlyTotalCostOfInaction = monthlyPurchases * (excessPercentage + rupturePercentage + marginPercentage + efficiencyPercentage);
-	const annualTotalCostOfInaction = monthlyTotalCostOfInaction * 12;
+	// A nova lógica já calcula o custo anual de não agir diretamente
+	const annualTotalCostOfInaction = totalCostOfInaction; // Usamos o valor do último cálculo do loop
 
 	const savings = annualTotalCostOfInaction - totalKenitInvestment;
 
