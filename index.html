@@ -1,326 +1,85 @@
+'''
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Tabela de Preços Dinâmica - Kenit SCM</title>
-	<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de ROI - Kenit SCM</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-	<div class="container">
-		<h1>Tabela de Preços Dinâmica - Kenit SCM</h1>
-
-		<!-- Seletor de Planos -->
-		<div class="plan-selector-container">
-			<button class="plan-selector-button" data-plan="standard">Standard</button>
-			<button class="plan-selector-button" data-plan="full">Full</button>
-			<button class="plan-selector-button" data-plan="enterprise">Enterprise</button>
-		</div>
-
-		<p>Clique nos valores de Mensalidade para editá-los e insira os valores totais de CNPJ, SKU e Usuários para calcular
-			os adicionais.</p>
-
-		<!-- Tabela de Preços -->
-		<table id="priceTable">
-			<thead>
-				<tr>
-					<th rowspan="2"></th>
-					<th colspan="3">Planos</th>
-				</tr>
-				<tr>
-					<th>Standard</th>
-					<th>Full</th>
-					<th>Enterprise</th>
-				</tr>
-			</thead>
-			<tbody>
-				<!-- Conteúdo (Content) -->
-				<tr class="section-header">
-					<td colspan="4">CONTEÚDO</td>
-				</tr>
-				<tr>
-					<td>Suporte Mensal</td>
-					<td>X</td>
-					<td>X</td>
-					<td>X</td>
-				</tr>
-				<tr>
-					<td>Solução de Compras</td>
-					<td>X</td>
-					<td>X</td>
-					<td>X</td>
-				</tr>
-				<tr>
-					<td>Relatórios Padrão</td>
-					<td>X</td>
-					<td>X</td>
-					<td>X</td>
-				</tr>
-				<tr>
-					<td>Atualização de Soluções de Toda Rede</td>
-					<td>X</td>
-					<td>X</td>
-					<td>X</td>
-				</tr>
-				<tr>
-					<td>Solução de Cotações</td>
-					<td></td>
-					<td>X</td>
-					<td>X</td>
-				</tr>
-				<tr>
-					<td>Solução de DRP (Reposições)</td>
-					<td></td>
-					<td>X</td>
-					<td>X</td>
-				</tr>
-				<tr>
-					<td>CNPJ Base</td>
-					<td data-plan="standard" data-type="cnpj_base" data-value="1">1</td>
-					<td data-plan="full" data-type="cnpj_base" data-value="5">5</td>
-					<td data-plan="enterprise" data-type="cnpj_base" data-value="10">10</td>
-				</tr>
-				<tr>
-					<td>Quantidade de SKUs Base</td>
-					<td data-plan="standard" data-type="sku_base" data-value="10000">10.000</td>
-					<td data-plan="full" data-type="sku_base" data-value="50000">50.000</td>
-					<td data-plan="enterprise" data-type="sku_base" data-value="100000">100.000</td>
-				</tr>
-				<tr>
-					<td>Usuários Base</td>
-					<td data-plan="standard" data-type="user_base" data-value="2">2</td>
-					<td data-plan="full" data-type="user_base" data-value="5">5</td>
-					<td data-plan="enterprise" data-type="user_base" data-value="Infinity">Ilimitado</td>
-				</tr>
-
-				<!-- Setup (Setup) -->
-				<tr class="section-header">
-					<td colspan="4">SETUP (Valores Fixos)</td>
-				</tr>
-				<tr>
-					<td>Taxa de Adesão</td>
-					<td class="setup" data-plan="standard" data-type="adesao" data-value="13100">R$ 13.100,00</td>
-					<td class="setup" data-plan="full" data-type="adesao" data-value="17320">R$ 17.320,00</td>
-					<td class="setup" data-plan="enterprise" data-type="adesao" data-value="21920">R$ 21.920,00</td>
-				</tr>
-				<tr>
-					<td>Implantação (Por Banco de Dados)</td>
-					<td class="setup" data-plan="standard" data-type="implantacao" data-value="2500">R$ 2.500,00</td>
-					<td class="setup" data-plan="full" data-type="implantacao" data-value="5000">R$ 5.000,00</td>
-					<td class="setup" data-plan="enterprise" data-type="implantacao" data-value="10000">R$ 10.000,00</td>
-				</tr>
-				<tr class="subtotal">
-					<td>Sub-Total</td>
-					<td id="subtotal-standard"></td>
-					<td id="subtotal-full"></td>
-					<td id="subtotal-enterprise"></td>
-				</tr>
-				<tr id="erp-integration-row">
-					<td><label for="erp-integration-checkbox">Integração ERP (Por ERP)</label> <input type="checkbox"
-							id="erp-integration-checkbox" checked></td>
-					<td class="setup" data-plan="standard" data-type="integracao" data-value="13680">R$ 13.680,00</td>
-					<td class="setup" data-plan="full" data-type="integracao" data-value="16560">R$ 16.560,00</td>
-					<td class="setup" data-plan="enterprise" data-type="integracao" data-value="16560">R$ 16.560,00</td>
-				</tr>
-				<tr class="total">
-					<td>Total Setup</td>
-					<td id="total-setup-standard"></td>
-					<td id="total-setup-full"></td>
-					<td id="total-setup-enterprise"></td>
-				</tr>
-
-				<!-- Mensalidade (Monthly Fee) - Editável -->
-				<tr class="section-header">
-					<td colspan="4">MENSALIDADE (Valores Base e Adicionais Editáveis)</td>
-				</tr>
-				<tr>
-					<td>Mensalidade Base</td>
-					<td class="monthly editable" data-plan="standard" data-type="base" data-value="1250">R$ 1.250,00</td>
-					<td class="monthly editable" data-plan="full" data-type="base" data-value="2500">R$ 2.500,00</td>
-					<td class="monthly editable" data-plan="enterprise" data-type="base" data-value="3500">R$ 3.500,00</td>
-				</tr>
-				<tr>
-					<td>CNPJ Adicional (por CNPJ)</td>
-					<td class="monthly editable" data-plan="standard" data-type="cnpj_add" data-value="50">R$ 50,00</td>
-					<td class="monthly editable" data-plan="full" data-type="cnpj_add" data-value="100">R$ 100,00</td>
-					<td class="monthly editable" data-plan="enterprise" data-type="cnpj_add" data-value="100">R$ 100,00</td>
-				</tr>
-				<tr>
-					<td>SKU Adicional (por 10.000 SKUs)</td>
-					<td class="monthly editable" data-plan="standard" data-type="sku_add" data-value="150">R$ 150,00</td>
-					<td class="monthly editable" data-plan="full" data-type="sku_add" data-value="250">R$ 250,00</td>
-					<td class="monthly editable" data-plan="enterprise" data-type="sku_add" data-value="250">R$ 250,00</td>
-				</tr>
-				<tr>
-					<td>Usuário Adicional (por Usuário)</td>
-					<td class="monthly editable" data-plan="standard" data-type="user_add" data-value="25">R$ 25,00</td>
-					<td class="monthly editable" data-plan="full" data-type="user_add" data-value="50">R$ 50,00</td>
-					<td class="monthly editable" data-plan="enterprise" data-type="user_add" data-value="0">R$ 0,00</td>
-				</tr>
-
-				<!-- Resultados dos Adicionais -->
-				<tr class="additional-cost">
-					<td>Custo Adicional CNPJ</td>
-					<td id="add-cnpj-standard">R$ 0,00</td>
-					<td id="add-cnpj-full">R$ 0,00</td>
-					<td id="add-cnpj-enterprise">R$ 0,00</td>
-				</tr>
-				<tr class="additional-cost">
-					<td>Custo Adicional SKU</td>
-					<td id="add-sku-standard">R$ 0,00</td>
-					<td id="add-sku-full">R$ 0,00</td>
-					<td id="add-sku-enterprise">R$ 0,00</td>
-				</tr>
-				<tr class="additional-cost">
-					<td>Custo Adicional Usuário</td>
-					<td id="add-user-standard">R$ 0,00</td>
-					<td id="add-user-full">R$ 0,00</td>
-					<td id="add-user-enterprise">R$ 0,00</td>
-				</tr>
-
-				<tr class="total">
-					<td>Total Mensalidade</td>
-					<td id="total-monthly-standard"></td>
-					<td id="total-monthly-full"></td>
-					<td id="total-monthly-enterprise"></td>
-				</tr>
-				<tr class="total">
-					<td>Total Anual (Setup + 12 × Mensalidade)</td>
-					<td id="total-annual-standard"></td>
-					<td id="total-annual-full"></td>
-					<td id="total-annual-enterprise"></td>
-				</tr>
-			</tbody>
-		</table>
-
-		<!-- Calculadora de Adicionais -->
-		<div class="calculator-section">
-			<h2>Calculadora de Adicionais</h2>
-			<p>Insira os valores totais desejados para CNPJ, SKU e Usuários para calcular os custos adicionais.</p>
-			<div class="input-group">
-				<label for="input-cnpj">CNPJs Totais:</label>
-				<input type="number" id="input-cnpj" value="1" min="1">
-			</div>
-			<div class="input-group">
-				<label for="input-sku">SKUs Totais (em unidades):</label>
-				<input type="number" id="input-sku" value="10000" min="10000" step="10000">
-			</div>
-			<div class="input-group">
-				<label for="input-users">Usuários Totais:</label>
-				<input type="number" id="input-users" value="2" min="2">
-			</div>
-			<div class="input-group">
-				<button id="calculate-button">Calcular</button>
-			</div>
-		</div>
-
-		<!-- Seção de Custo de Não Agir (ROI) -->
-		<div class="roi-section">
-			<h2>Custo de Não Agir vs. Investimento Kenit</h2>
-			<p>Insira o valor médio mensal de compras/vendas da empresa para visualizar o impacto financeiro.</p>
-
-			<div class="input-group">
-				<label for="input-total-stock">Valor Total do Estoque (R$):</label>
-				<input type="number" id="input-total-stock" value="500000" min="0" step="50000">
-			</div>
-			<div class="input-group">
-				<label for="input-lost-sales">Valor Mensal de Vendas Perdidas (R$):</label>
-				<input type="number" id="input-lost-sales" value="50000" min="0" step="10000">
-			</div>
-			<div class="input-group">
-				<button id="calculate-roi-button">Calcular ROI</button>
-			</div>
-
-			<!-- Tabela de Comparação ROI -->
-			<table id="roiTable" class="roi-table">
-				<thead>
-					<tr>
-						<th>Métrica</th>
-						<th>Standard</th>
-						<th>Full</th>
-						<th>Enterprise</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr class="roi-header">
-						<td colspan="4">Custo de Não Agir (Anual)</td>
-					</tr>
-					<tr>
-						<td>Excesso de Estoque (27%)</td>
-						<td id="roi-excess-standard">-</td>
-						<td id="roi-excess-full">-</td>
-						<td id="roi-excess-enterprise">-</td>
-					</tr>
-					<tr>
-						<td>Ruptura de Estoque (12%)</td>
-						<td id="roi-rupture-standard">-</td>
-						<td id="roi-rupture-full">-</td>
-						<td id="roi-rupture-enterprise">-</td>
-					</tr>
-					<tr>
-						<td>Margem Negativa (13%)</td>
-						<td id="roi-margin-standard">-</td>
-						<td id="roi-margin-full">-</td>
-						<td id="roi-margin-enterprise">-</td>
-					</tr>
-					<tr>
-						<td>Baixa Eficiência (20%)</td>
-						<td id="roi-efficiency-standard">-</td>
-						<td id="roi-efficiency-full">-</td>
-						<td id="roi-efficiency-enterprise">-</td>
-					</tr>
-					<tr class="roi-total">
-						<td><strong>Total Custo de Não Agir (Anual)</strong></td>
-						<td id="roi-total-standard">-</td>
-						<td id="roi-total-full">-</td>
-						<td id="roi-total-enterprise">-</td>
-					</tr>
-
-					<tr class="roi-header">
-						<td colspan="4">Investimento Kenit (Anual)</td>
-					</tr>
-					<tr>
-						<td>Setup Total</td>
-						<td id="roi-setup-standard">-</td>
-						<td id="roi-setup-full">-</td>
-						<td id="roi-setup-enterprise">-</td>
-					</tr>
-					<tr>
-						<td>Mensalidade (12 meses)</td>
-						<td id="roi-monthly-standard">-</td>
-						<td id="roi-monthly-full">-</td>
-						<td id="roi-monthly-enterprise">-</td>
-					</tr>
-					<tr class="roi-total">
-						<td><strong>Total Investimento Kenit (Anual)</strong></td>
-						<td id="roi-kenit-standard">-</td>
-						<td id="roi-kenit-full">-</td>
-						<td id="roi-kenit-enterprise">-</td>
-					</tr>
-
-					<tr class="roi-comparison">
-						<td><strong>Economia Anual (Custo de Não Agir - Investimento Kenit)</strong></td>
-						<td id="roi-savings-standard">-</td>
-						<td id="roi-savings-full">-</td>
-						<td id="roi-savings-enterprise">-</td>
-					</tr>
-					<tr class="roi-comparison">
-						<td><strong>ROI (%)</strong></td>
-						<td id="roi-percentage-standard">-</td>
-						<td id="roi-percentage-full">-</td>
-						<td id="roi-percentage-enterprise">-</td>
-					</tr>
-				</tbody>
-			</table>
-
-			<!-- Mensagem de Conclusão -->
-			<div id="roi-message" class="roi-message"></div>
-		</div>
-	</div>
-
-	<script src="script.js"></script>
+  <div class="container">
+    <h1>Simulador de ROI - Kenit SCM</h1>
+    <p>Preencha os campos abaixo para simular o custo do plano e o Retorno sobre o Investimento (ROI) baseado na redução
+      de excesso de estoque.</p> <!-- Seção de Cálculo do Plano -->
+    <div class="section">
+      <h2>1. Calcule o Custo do Plano Kenit</h2>
+      <div class="input-grid">
+        <div class="input-group"> <label for="input-cnpj">Quantidade de CNPJs:</label> <input type="number"
+            id="input-cnpj" value="1" min="1"> </div>
+        <div class="input-group"> <label for="input-sku">Quantidade de SKUs:</label> <input type="number" id="input-sku"
+            value="10000" min="1" step="1000"> </div>
+        <div class="input-group"> <label for="input-users">Quantidade de Usuários:</label> <input type="number"
+            id="input-users" value="2" min="1"> </div>
+      </div>
+      <div class="results-grid">
+        <div class="result-box">
+          <h3>Custo Mensal</h3>
+          <p id="total-monthly-cost">R$ 1.300,00</p>
+        </div>
+        <div class="result-box">
+          <h3>Custo de Setup (Fixo)</h3>
+          <p id="total-setup-cost">R$ 2.500,00</p>
+        </div>
+        <div class="result-box total-annual">
+          <h3>Custo Total Anual</h3>
+          <p id="total-annual-cost">R$ 18.100,00</p>
+        </div>
+      </div>
+    </div> <!-- Seção de Cálculo de ROI -->
+    <div class="section">
+      <h2>2. Calcule o ROI baseado no Excesso de Estoque</h2>
+      <div class="input-grid">
+        <div class="input-group"> <label for="input-stock-value">Valor do Estoque (R$):</label> <input type="number"
+            id="input-stock-value" placeholder="Ex: 1000000"> </div>
+        <div class="input-group checkbox-group"> <input type="checkbox" id="is-total-stock-checkbox"> <label
+            for="is-total-stock-checkbox">Este é o valor do <strong>Estoque Total</strong> (calcular excesso com média
+            de mercado de 60%).</label> </div>
+      </div>
+      <div class="results-grid roi-results">
+        <div class="result-box">
+          <h3>Valor do Excesso de Estoque</h3>
+          <p id="excess-stock-value">R$ 0,00</p>
+        </div>
+        <div class="result-box">
+          <h3>Potencial de Redução (20%)</h3>
+          <p id="reduction-20-value">R$ 0,00</p>
+        </div>
+        <div class="result-box">
+          <h3>Potencial de Redução (30%)</h3>
+          <p id="reduction-30-value">R$ 0,00</p>
+        </div>
+      </div>
+      <div class="roi-summary">
+        <h3>Comparativo: Redução de Excesso vs. Custo Kenit</h3>
+        <p>A economia gerada pela redução de <strong>20% a 30%</strong> do seu excesso de estoque pode pagar o
+          investimento na Kenit e ainda gerar um lucro substancial.</p>
+        <div class="roi-final-comparison">
+          <div class="roi-bar-container">
+            <div class="roi-bar savings-bar" id="savings-bar"> <span id="savings-bar-label"></span> </div>
+            <div class="roi-bar cost-bar" id="cost-bar"> <span id="cost-bar-label"></span> </div>
+          </div>
+          <div class="roi-final-value">
+            <h4>ROI Potencial (em 1 ano)</h4>
+            <p id="roi-final-percentage">0%</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
 </body>
 
-</html>
+</html>'''
