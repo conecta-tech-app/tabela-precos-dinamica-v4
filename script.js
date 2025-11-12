@@ -1,335 +1,161 @@
-// Função para formatar valores em moeda brasileira
-function formatCurrency(value) {
-	return new Intl.NumberFormat('pt-BR', {
-		style: 'currency',
-		currency: 'BRL',
-		minimumFractionDigits: 2
-	}).format(value);
-}
+// --- CONSTANTES E DADOS ---
 
-// Objeto para armazenar os valores base e adicionais
-const priceData = {
-	standard: {
-		base: 1250,
-		cnpj_add: 50,
-		sku_add: 150,
-		user_add: 25,
-		adesao: 13100,
-		implantacao: 2500,
-		integracao: 13680,
-		cnpj_base: 1,
-		sku_base: 10000,
-		user_base: 2
-	},
-	full: {
-		base: 2500,
-		cnpj_add: 100,
-		sku_add: 250,
-		user_add: 50,
-		adesao: 17320,
-		implantacao: 5000,
-		integracao: 16560,
-		cnpj_base: 5,
-		sku_base: 50000,
-		user_base: 5
-	},
-	enterprise: {
-		base: 3500,
-		cnpj_add: 100,
-		sku_add: 250,
-		user_add: 0,
-		adesao: 21920,
-		implantacao: 10000,
-		integracao: 16560,
-		cnpj_base: 10,
-		sku_base: 100000,
-		user_base: Infinity
-	}
+// Valores do Plano Único (Baseado na imagem original e nas novas regras)
+const BASE_PLAN = {
+    base_monthly: 1300,
+    base_cnpj: 1,
+    base_sku: 10000,
+    base_users: 2,
+    setup_cost: 2500, // Implantação (R$ 2.500,00) + Taxa de Adesão (R$ 13.100,00) - Simplificado para R$ 2.500,00 conforme o setup da imagem original (Sub-Total)
+    // Usando 2500 como custo de setup para simplificar, já que o usuário não mencionou os valores de adesão e implantação
+    // Vou usar o valor de R$ 2.500,00 como custo de Setup, que é o valor da Implantação do plano Standard na imagem original.
+    // O valor de R$ 13.100,00 (Adesão) + R$ 2.500,00 (Implantação) = R$ 15.600,00 (Sub-Total)
+    // Para simplificar, vou usar R$ 15.600,00 como Setup Fixo.
+    setup_cost: 15600,
+
+    // Valores Adicionais
+    add_user: 50,
+    add_cnpj: 100,
+    add_sku: 250 // por 10.000 SKUs
 };
 
-// Função principal de cálculo
-function calculateTotals() {
-	// 1. Obter valores de entrada do usuário
-	const totalCnpj = parseInt(document.getElementById('input-cnpj').value) || 0;
-	const totalSku = parseInt(document.getElementById('input-sku').value) || 0;
-	const totalUsers = parseInt(document.getElementById('input-users').value) || 0;
+// --- FUNÇÕES DE UTILIDADE ---
 
-	// Iterar sobre cada plano
-	['standard', 'full', 'enterprise'].forEach(plan => {
-		const data = priceData[plan];
-
-		// --- CÁLCULO DO SETUP ---
-		const subTotalSetup = data.adesao + data.implantacao;
-		let totalSetup = subTotalSetup;
-
-		// Verifica o checkbox de Integração ERP
-		const erpCheckbox = document.getElementById('erp-integration-checkbox');
-		if (erpCheckbox && erpCheckbox.checked) {
-			totalSetup += data.integracao;
-		}
-
-		// Atualizar valores do Setup na tabela
-		document.getElementById(`subtotal-${plan}`).textContent = formatCurrency(subTotalSetup);
-		document.getElementById(`total-setup-${plan}`).textContent = formatCurrency(totalSetup);
-
-		// --- CÁLCULO DA MENSALIDADE ADICIONAL ---
-		let monthlyTotal = data.base;
-		let additionalCnpjCost = 0;
-		let additionalSkuCost = 0;
-		let additionalUserCost = 0;
-
-		// CNPJ Adicional
-		const cnpjDiff = totalCnpj - data.cnpj_base;
-		if (cnpjDiff > 0) {
-			additionalCnpjCost = cnpjDiff * data.cnpj_add;
-			monthlyTotal += additionalCnpjCost;
-		}
-
-		// SKU Adicional (a cada 10.000)
-		const skuDiff = totalSku - data.sku_base;
-		if (skuDiff > 0) {
-			const skuBlocks = Math.ceil(skuDiff / 10000);
-			additionalSkuCost = skuBlocks * data.sku_add;
-			monthlyTotal += additionalSkuCost;
-		}
-
-		// Usuário Adicional
-		const userDiff = totalUsers - data.user_base;
-		if (data.user_base !== Infinity && userDiff > 0) {
-			additionalUserCost = userDiff * data.user_add;
-			monthlyTotal += additionalUserCost;
-		}
-
-		// Atualizar custos adicionais na tabela
-		document.getElementById(`add-cnpj-${plan}`).textContent = formatCurrency(additionalCnpjCost);
-		document.getElementById(`add-sku-${plan}`).textContent = formatCurrency(additionalSkuCost);
-		document.getElementById(`add-user-${plan}`).textContent = formatCurrency(additionalUserCost);
-
-		// Atualizar total mensal
-		document.getElementById(`total-monthly-${plan}`).textContent = formatCurrency(monthlyTotal);
-
-		// --- CÁLCULO DO TOTAL ANUAL ---
-		const totalAnnual = totalSetup + (monthlyTotal * 12);
-		document.getElementById(`total-annual-${plan}`).textContent = formatCurrency(totalAnnual);
-
-		// Armazenar valores para uso no ROI
-		priceData[plan].totalSetup = totalSetup;
-		priceData[plan].monthlyTotal = monthlyTotal;
-		priceData[plan].totalAnnual = totalAnnual;
-	});
+function formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2
+    }).format(value);
 }
 
-// --- LÓGICA DE EDIÇÃO DE CAMPOS ---
+// --- LÓGICA DE CÁLCULO DO PLANO ---
 
-function setupEditableFields() {
-	const editableCells = document.querySelectorAll('.editable');
+function calculatePlanCost() {
+    // 1. Obter valores de entrada do usuário
+    const totalCnpj = parseInt(document.getElementById('input-cnpj').value) || 0;
+    const totalSku = parseInt(document.getElementById('input-sku').value) || 0;
+    const totalUsers = parseInt(document.getElementById('input-users').value) || 0;
 
-	editableCells.forEach(cell => {
-		cell.addEventListener('click', function (event) {
-			if (event.target.tagName === 'INPUT') return;
+    let monthlyCost = BASE_PLAN.base_monthly;
+    let additionalCost = 0;
 
-			const currentValue = this.getAttribute('data-value');
-			const plan = this.getAttribute('data-plan');
-			const type = this.getAttribute('data-type');
+    // CNPJ Adicional
+    const cnpjDiff = totalCnpj - BASE_PLAN.base_cnpj;
+    if (cnpjDiff > 0) {
+        additionalCost += cnpjDiff * BASE_PLAN.add_cnpj;
+    }
 
-			// Criar campo de entrada
-			const input = document.createElement('input');
-			input.type = 'number';
-			input.value = currentValue;
-			input.step = '0.01';
+    // SKU Adicional (a cada 10.000)
+    const skuDiff = totalSku - BASE_PLAN.base_sku;
+    if (skuDiff > 0) {
+        const skuBlocks = Math.ceil(skuDiff / 10000);
+        additionalCost += skuBlocks * BASE_PLAN.add_sku;
+    }
 
-			// Limpar célula e adicionar input
-			this.textContent = '';
-			this.appendChild(input);
-			input.focus();
-			input.select();
+    // Usuário Adicional
+    const userDiff = totalUsers - BASE_PLAN.base_users;
+    if (userDiff > 0) {
+        additionalCost += userDiff * BASE_PLAN.add_user;
+    }
 
-			// Função para salvar o valor
-			const saveValue = () => {
-				const newValue = parseFloat(input.value) || 0;
-				this.setAttribute('data-value', newValue);
-				this.textContent = formatCurrency(newValue);
+    monthlyCost += additionalCost;
+    const totalSetup = BASE_PLAN.setup_cost;
+    const totalAnnual = totalSetup + (monthlyCost * 12);
 
-				// Atualizar priceData
-				if (priceData[plan] && priceData[plan][type] !== undefined) {
-					priceData[plan][type] = newValue;
-				}
+    // 2. Atualizar resultados na tela
+    document.getElementById('total-monthly-cost').textContent = formatCurrency(monthlyCost);
+    document.getElementById('total-setup-cost').textContent = formatCurrency(totalSetup);
+    document.getElementById('total-annual-cost').textContent = formatCurrency(totalAnnual);
 
-				// Recalcular totais
-				calculateTotals();
-			};
-
-			// Salvar ao pressionar Enter ou ao sair do campo
-			input.addEventListener('blur', saveValue);
-			input.addEventListener('keypress', (e) => {
-				if (e.key === 'Enter') saveValue();
-			});
-		});
-	});
+    // Retorna os custos para o cálculo do ROI
+    return { monthlyCost, totalSetup, totalAnnual };
 }
 
-// --- LÓGICA DE SELEÇÃO DE PLANO ---
-
-function setupPlanSelector() {
-	const buttons = document.querySelectorAll('.plan-selector-button');
-	const table = document.getElementById('priceTable');
-	const plans = ['standard', 'full', 'enterprise'];
-
-	buttons.forEach(button => {
-		button.addEventListener('click', function () {
-			const selectedPlan = this.getAttribute('data-plan');
-
-			// 1. Remove a seleção de todos os botões e colunas
-			buttons.forEach(btn => btn.classList.remove('selected'));
-			table.querySelectorAll('tr').forEach(row => {
-				row.classList.remove('highlighted');
-			});
-
-			// 2. Adiciona a seleção ao botão clicado
-			this.classList.add('selected');
-
-			// 3. Adiciona o destaque à coluna correspondente
-			const planIndex = plans.indexOf(selectedPlan) + 2;
-
-			table.querySelectorAll('tr').forEach(row => {
-				const cells = row.querySelectorAll('td, th');
-				if (cells.length > planIndex - 1) {
-					row.classList.add('highlighted');
-				}
-			});
-
-			// 4. Salva o plano selecionado
-			localStorage.setItem('selectedPlan', selectedPlan);
-		});
-	});
-
-	// Tenta carregar o plano selecionado ao iniciar
-	const initialPlan = localStorage.getItem('selectedPlan') || 'standard';
-	const initialButton = document.querySelector(`.plan-selector-button[data-plan="${initialPlan}"]`);
-	if (initialButton) {
-		initialButton.click();
-	} else {
-		document.querySelector('.plan-selector-button[data-plan="standard"]').click();
-	}
-}
-
-// --- LÓGICA DE INPUTS DA CALCULADORA ---
-
-function setupCalculatorInputs() {
-	// Vincula o evento de clique ao botão calcular
-	document.getElementById('calculate-button').addEventListener('click', calculateTotals);
-
-	// Vincula o evento de clique ao checkbox do ERP
-	const erpCheckbox = document.getElementById('erp-integration-checkbox');
-	if (erpCheckbox) {
-		erpCheckbox.addEventListener('change', calculateTotals);
-	}
-}
-
-// --- LÓGICA DE CÁLCULO DE ROI ---
+// --- LÓGICA DE CÁLCULO DO ROI ---
 
 function calculateROI() {
-	// Novos inputs
-	const totalStock = parseFloat(document.getElementById('input-total-stock').value) || 0;
-	const lostSales = parseFloat(document.getElementById('input-lost-sales').value) || 0;
+    const stockValueInput = document.getElementById('input-stock-value');
+    const isTotalStockCheckbox = document.getElementById('is-total-stock-checkbox');
+    const stockValue = parseFloat(stockValueInput.value) || 0;
 
-	if (totalStock <= 0 && lostSales <= 0) {
-		alert('Por favor, insira um valor válido para o Valor Total do Estoque ou para o Valor Mensal de Vendas Perdidas.');
-		return;
-	}
+    if (stockValue <= 0) {
+        alert('Por favor, insira um valor válido para o Estoque.');
+        return;
+    }
 
-	// Percentuais de perda (baseado no slide e na nova lógica)
-	// 1. Excesso de Estoque: Aplicado sobre o Valor Total do Estoque (Ex: 27% do estoque está parado)
-	const excessPercentage = 0.27;     // 27%
-	// 2. Ruptura de Estoque: Aplicado sobre o Valor Mensal de Vendas Perdidas (Ex: 12% das vendas perdidas)
-	const rupturePercentage = 0.12;    // 12%
-	// 3. Margem Negativa: Aplicado sobre o Valor Mensal de Vendas Perdidas (Ex: 13% de perda de margem)
-	const marginPercentage = 0.13;     // 13%
-	// 4. Baixa Eficiência: Estimativa de custo operacional mensal (Ex: 20% do custo de folha de pagamento de compras/estoque)
-	// Para simplificar e manter o cálculo no escopo do input, vamos aplicar um percentual de custo operacional sobre o total de vendas perdidas, como proxy de ineficiência.
-	const efficiencyPercentage = 0.20; // 20%
+    let excessStockValue = 0;
+    const marketExcessPercentage = 0.60; // 60% de excesso na média de mercado
 
-	// Iterar sobre cada plano
-	['standard', 'full', 'enterprise'].forEach(plan => {
-		// --- CÁLCULO DO CUSTO DE NÃO AGIR (ANUAL) ---
+    if (isTotalStockCheckbox.checked) {
+        // Opção 2: Calcular excesso com base no estoque total (60% de excesso)
+        excessStockValue = stockValue * marketExcessPercentage;
+    } else {
+        // Opção 1: O valor inserido é o próprio excesso de estoque
+        excessStockValue = stockValue;
+    }
 
-		// 1. Custo Anual de Excesso de Estoque (Capital Imobilizado)
-		// Consideramos o custo de capital (ex: 10% ao ano) sobre o valor do excesso. Usaremos 10% como proxy.
-		const annualExcessCost = (totalStock * excessPercentage) * 0.10;
+    // 1. Calcular a economia potencial (20% e 30% de redução do excesso)
+    const reduction20 = excessStockValue * 0.20;
+    const reduction30 = excessStockValue * 0.30;
 
-		// 2. Custo Anual de Ruptura de Estoque (Vendas Perdidas)
-		const annualRuptureCost = (lostSales * rupturePercentage) * 12;
+    // 2. Obter o custo anual do Kenit
+    const { totalAnnual } = calculatePlanCost();
 
-		// 3. Custo Anual de Margem Negativa (Perda de Margem em Vendas)
-		const annualMarginCost = (lostSales * marginPercentage) * 12;
+    // 3. Calcular o ROI (usando a média de redução de 25% para o ROI final)
+    const averageReduction = excessStockValue * 0.25;
+    const savings = averageReduction - totalAnnual;
+    const roiPercentage = (savings / totalAnnual) * 100;
 
-		// 4. Custo Anual de Baixa Eficiência (Custo Operacional)
-		const annualEfficiencyCost = (lostSales * efficiencyPercentage) * 12;
+    // 4. Atualizar resultados na tela
+    document.getElementById('excess-stock-value').textContent = formatCurrency(excessStockValue);
+    document.getElementById('reduction-20-value').textContent = formatCurrency(reduction20);
+    document.getElementById('reduction-30-value').textContent = formatCurrency(reduction30);
+    document.getElementById('roi-final-percentage').textContent = roiPercentage.toFixed(2) + '%';
+    document.getElementById('roi-final-percentage').style.color = savings >= 0 ? '#28a745' : '#dc3545';
 
-		const totalCostOfInaction = annualExcessCost + annualRuptureCost + annualMarginCost + annualEfficiencyCost;
+    // 5. Atualizar a barra de comparação
+    const totalValue = averageReduction + totalAnnual;
+    const savingsPercentage = (averageReduction / totalValue) * 100;
+    const costPercentage = (totalAnnual / totalValue) * 100;
 
-		// --- ATUALIZAR TABELA ROI ---
-		document.getElementById(`roi-excess-${plan}`).textContent = formatCurrency(annualExcessCost);
-		document.getElementById(`roi-rupture-${plan}`).textContent = formatCurrency(annualRuptureCost);
-		document.getElementById(`roi-margin-${plan}`).textContent = formatCurrency(annualMarginCost);
-		document.getElementById(`roi-efficiency-${plan}`).textContent = formatCurrency(annualEfficiencyCost);
-		document.getElementById(`roi-total-${plan}`).textContent = formatCurrency(totalCostOfInaction);
+    const savingsBar = document.getElementById('savings-bar');
+    const costBar = document.getElementById('cost-bar');
+    const savingsLabel = document.getElementById('savings-bar-label');
+    const costLabel = document.getElementById('cost-bar-label');
 
-		// --- INVESTIMENTO KENIT (ANUAL) ---
-		const setupCost = priceData[plan].totalSetup || 0;
-		const monthlyCost = priceData[plan].monthlyTotal || 0;
-		const annualMonthlyCost = monthlyCost * 12;
-		const totalKenitInvestment = setupCost + annualMonthlyCost;
+    // Se a economia for maior que o custo, a barra de economia ocupa a maior parte
+    if (averageReduction >= totalAnnual) {
+        savingsBar.style.width = `${savingsPercentage}%`;
+        costBar.style.width = `${costPercentage}%`;
+        savingsLabel.textContent = `Economia: ${formatCurrency(averageReduction)}`;
+        costLabel.textContent = `Custo Kenit: ${formatCurrency(totalAnnual)}`;
+    } else {
+        // Se o custo for maior que a economia, inverte a ordem visualmente (opcional) ou apenas ajusta as larguras
+        savingsBar.style.width = `${savingsPercentage}%`;
+        costBar.style.width = `${costPercentage}%`;
+        savingsLabel.textContent = `Economia: ${formatCurrency(averageReduction)}`;
+        costLabel.textContent = `Custo Kenit: ${formatCurrency(totalAnnual)}`;
+    }
 
-		document.getElementById(`roi-setup-${plan}`).textContent = formatCurrency(setupCost);
-		document.getElementById(`roi-monthly-${plan}`).textContent = formatCurrency(annualMonthlyCost);
-		document.getElementById(`roi-kenit-${plan}`).textContent = formatCurrency(totalKenitInvestment);
-
-		// --- COMPARAÇÃO E ROI ---
-		const savings = totalCostOfInaction - totalKenitInvestment;
-		const roiPercentage = (savings / totalKenitInvestment) * 100;
-
-		document.getElementById(`roi-savings-${plan}`).textContent = formatCurrency(savings);
-		document.getElementById(`roi-percentage-${plan}`).textContent = roiPercentage.toFixed(2) + '%';
-	});
-
-	// --- MENSAGEM DE CONCLUSÃO ---
-	const selectedPlan = localStorage.getItem('selectedPlan') || 'standard';
-	const setupCost = priceData[selectedPlan].totalSetup || 0;
-	const monthlyCost = priceData[selectedPlan].monthlyTotal || 0;
-	const annualMonthlyCost = monthlyCost * 12;
-	const totalKenitInvestment = setupCost + annualMonthlyCost;
-
-	// A nova lógica já calcula o custo anual de não agir diretamente
-	const annualTotalCostOfInaction = totalCostOfInaction; // Usamos o valor do último cálculo do loop
-
-	const savings = annualTotalCostOfInaction - totalKenitInvestment;
-
-	const messageElement = document.getElementById('roi-message');
-	if (savings > 0) {
-		messageElement.className = 'roi-message positive';
-		messageElement.textContent = `O investimento no Kenit é inferior ao custo de não agir. Economia anual estimada: ${formatCurrency(savings)}. O ROI é imediato!`;
-	} else {
-		messageElement.className = 'roi-message negative';
-		messageElement.textContent = `O custo de não agir é menor que o investimento no Kenit para este cenário. Considere revisar os dados.`;
-	}
+    // Ajuste visual para casos extremos
+    if (savingsPercentage < 10) savingsLabel.textContent = '';
+    if (costPercentage < 10) costLabel.textContent = '';
 }
 
 // --- INICIALIZAÇÃO ---
 
 document.addEventListener('DOMContentLoaded', () => {
-	// 1. Configurar campos editáveis
-	setupEditableFields();
+    // 1. Configurar eventos de input para o cálculo do plano
+    document.getElementById('input-cnpj').addEventListener('input', calculatePlanCost);
+    document.getElementById('input-sku').addEventListener('input', calculatePlanCost);
+    document.getElementById('input-users').addEventListener('input', calculatePlanCost);
 
-	// 2. Configurar inputs da calculadora e checkbox do ERP
-	setupCalculatorInputs();
+    // 2. Configurar eventos de input e checkbox para o cálculo do ROI
+    document.getElementById('input-stock-value').addEventListener('input', calculateROI);
+    document.getElementById('is-total-stock-checkbox').addEventListener('change', calculateROI);
 
-	// 3. Configurar a seleção de plano
-	setupPlanSelector();
-
-	// 4. Configurar o botão de ROI
-	document.getElementById('calculate-roi-button').addEventListener('click', calculateROI);
-
-	// 5. Calcular totais iniciais
-	calculateTotals();
+    // 3. Calcular custos iniciais
+    calculatePlanCost();
+    calculateROI(); // Tenta calcular o ROI inicial (será 0 ou pedirá input)
 });
