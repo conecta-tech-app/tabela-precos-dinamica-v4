@@ -1,190 +1,165 @@
-// --- CONSTANTES E DADOS ---
+(function() {
+    // --- CONSTANTES E DADOS ---
+    const BASE_PLAN = {
+        base_monthly: 1300,
+        base_cnpj: 1,
+        base_sku: 10000,
+        base_users: 2,
+        setup_cost: 15600,
+        add_user: 50,
+        add_cnpj: 100,
+        add_sku: 250 // por 10.000 SKUs
+    };
 
-// Valores do Plano Único
-const BASE_PLAN = {
-    base_monthly: 1300,
-    base_cnpj: 1,
-    base_sku: 10000,
-    base_users: 2,
-    setup_cost: 15600,
-    
-    // Valores Adicionais
-    add_user: 50,
-    add_cnpj: 100,
-    add_sku: 250 // por 10.000 SKUs
-};
+    // --- ELEMENTOS DO DOM ---
+    const elements = {};
 
-// --- FUNÇÕES DE UTILIDADE ---
+    function cacheDOMElements() {
+        // Inputs do Plano
+        elements.inputCnpj = document.getElementById('input-cnpj');
+        elements.inputSku = document.getElementById('input-sku');
+        elements.inputUsers = document.getElementById('input-users');
 
-function formatCurrency(value) {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency', 
-        currency: 'BRL',
-        minimumFractionDigits: 2
-    }).format(value);
-}
+        // Outputs do Plano
+        elements.totalMonthlyCost = document.getElementById('total-monthly-cost');
+        elements.totalSetupCost = document.getElementById('total-setup-cost');
+        elements.totalAnnualCost = document.getElementById('total-annual-cost');
 
-// --- LÓGICA DE CÁLCULO DO PLANO ---
+        // Inputs de ROI - Excesso
+        elements.inputStockValue = document.getElementById('input-stock-value');
+        elements.inputExcessPercentage = document.getElementById('input-excess-percentage');
+        elements.isTotalStockCheckbox = document.getElementById('is-total-stock-checkbox');
 
-function calculatePlanCost() {
-    // 1. Obter valores de entrada do usuário
-    const totalCnpj = parseInt(document.getElementById('input-cnpj').value) || 0;
-    const totalSku = parseInt(document.getElementById('input-sku').value) || 0;
-    const totalUsers = parseInt(document.getElementById('input-users').value) || 0;
+        // Outputs de ROI - Excesso
+        elements.excessStockValue = document.getElementById('excess-stock-value');
+        elements.reduction20Value = document.getElementById('reduction-20-value');
+        elements.reduction30Value = document.getElementById('reduction-30-value');
 
-    let monthlyCost = BASE_PLAN.base_monthly;
-    let additionalCost = 0;
+        // Inputs de ROI - Ruptura
+        elements.inputMonthlySales = document.getElementById('input-monthly-sales');
+        elements.inputRupturePercentage = document.getElementById('input-rupture-percentage');
+        elements.inputRuptureReduction = document.getElementById('input-rupture-reduction');
+        elements.inputFiliais = document.getElementById('input-filiais');
 
-    // CNPJ Adicional
-    const cnpjDiff = totalCnpj - BASE_PLAN.base_cnpj;
-    if (cnpjDiff > 0) {
-        additionalCost += cnpjDiff * BASE_PLAN.add_cnpj;
+        // Outputs de ROI - Ruptura
+        elements.ruptureLossValue = document.getElementById('rupture-loss-value');
+        elements.ruptureRecoveryValue = document.getElementById('rupture-recovery-value');
+
+        // Outputs de ROI - Resumo
+        elements.excessSavings = document.getElementById('excess-savings');
+        elements.ruptureSavings = document.getElementById('rupture-savings');
+        elements.totalSavings = document.getElementById('total-savings');
+        elements.roiFinalPercentage = document.getElementById('roi-final-percentage');
+        elements.savingsBar = document.getElementById('savings-bar');
+        elements.costBar = document.getElementById('cost-bar');
+        elements.savingsBarLabel = document.getElementById('savings-bar-label');
+        elements.costBarLabel = document.getElementById('cost-bar-label');
     }
 
-    // SKU Adicional (a cada 10.000)
-    const skuDiff = totalSku - BASE_PLAN.base_sku;
-    if (skuDiff > 0) {
-        const skuBlocks = Math.ceil(skuDiff / 10000);
-        additionalCost += skuBlocks * BASE_PLAN.add_sku;
+    // --- FUNÇÕES DE UTILIDADE ---
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 2
+        }).format(value);
     }
 
-    // Usuário Adicional
-    const userDiff = totalUsers - BASE_PLAN.base_users;
-    if (userDiff > 0) {
-        additionalCost += userDiff * BASE_PLAN.add_user;
-    }
+    // --- LÓGICA DE CÁLCULO ---
+    function calculatePlanCost() {
+        const totalCnpj = parseInt(elements.inputCnpj.value) || 0;
+        const totalSku = parseInt(elements.inputSku.value) || 0;
+        const totalUsers = parseInt(elements.inputUsers.value) || 0;
 
-    monthlyCost += additionalCost;
-    const totalSetup = BASE_PLAN.setup_cost;
-    const totalAnnual = totalSetup + (monthlyCost * 12);
+        let monthlyCost = BASE_PLAN.base_monthly;
+        let additionalCost = 0;
 
-    // 2. Atualizar resultados na tela
-    document.getElementById('total-monthly-cost').textContent = formatCurrency(monthlyCost);
-    document.getElementById('total-setup-cost').textContent = formatCurrency(totalSetup);
-    document.getElementById('total-annual-cost').textContent = formatCurrency(totalAnnual);
-
-    // Retorna os custos para o cálculo do ROI
-    return { monthlyCost, totalSetup, totalAnnual };
-}
-
-// --- LÓGICA DE CÁLCULO DO ROI ---
-
-function calculateROI() {
-    const stockValueInput = document.getElementById('input-stock-value');
-    const excessPercentageInput = document.getElementById('input-excess-percentage');
-    const isTotalStockCheckbox = document.getElementById('is-total-stock-checkbox');
-    const monthlySalesInput = document.getElementById('input-monthly-sales');
-    const rupturePercentageInput = document.getElementById('input-rupture-percentage');
-
-    const stockValue = parseFloat(stockValueInput.value) || 0;
-    const excessPercentage = parseFloat(excessPercentageInput.value) / 100 || 0.60;
-    const monthlySales = parseFloat(monthlySalesInput.value) || 0;
-    const rupturePercentage = parseFloat(rupturePercentageInput.value) / 100 || 0.10;
-
-    // --- CÁLCULO DO EXCESSO DE ESTOQUE ---
-
-    let excessStockValue = 0;
-
-    if (stockValue > 0) {
-        if (isTotalStockCheckbox.checked) {
-            // Opção 2: Calcular excesso com base no estoque total
-            excessStockValue = stockValue * excessPercentage;
-        } else {
-            // Opção 1: O valor inserido é o próprio excesso de estoque
-            excessStockValue = stockValue;
+        if (totalCnpj > BASE_PLAN.base_cnpj) {
+            additionalCost += (totalCnpj - BASE_PLAN.base_cnpj) * BASE_PLAN.add_cnpj;
         }
+        if (totalSku > BASE_PLAN.base_sku) {
+            const skuBlocks = Math.ceil((totalSku - BASE_PLAN.base_sku) / 10000);
+            additionalCost += skuBlocks * BASE_PLAN.add_sku;
+        }
+        if (totalUsers > BASE_PLAN.base_users) {
+            additionalCost += (totalUsers - BASE_PLAN.base_users) * BASE_PLAN.add_user;
+        }
+
+        monthlyCost += additionalCost;
+        const totalSetup = BASE_PLAN.setup_cost;
+        const totalAnnual = totalSetup + (monthlyCost * 12);
+
+        elements.totalMonthlyCost.textContent = formatCurrency(monthlyCost);
+        elements.totalSetupCost.textContent = formatCurrency(totalSetup);
+        elements.totalAnnualCost.textContent = formatCurrency(totalAnnual);
+
+        return { totalAnnual };
     }
 
-    // 1. Calcular a economia potencial por redução de excesso (20% e 30%)
-    const reduction20 = excessStockValue * 0.20;
-    const monthlySales = parseFloat(monthlySalesInput.value) || 0;
-    const rupturePercentage = parseFloat(rupturePercentageInput.value) / 100 || 0.10;
-    const ruptureReductionPercentage = parseFloat(document.getElementById('input-rupture-reduction').value) / 100 || 0.50;
-    const numFiliais = parseInt(document.getElementById('input-filiais').value) || 1;
+    function calculateROI() {
+        const stockValue = parseFloat(elements.inputStockValue.value) || 0;
+        const excessPercentage = parseFloat(elements.inputExcessPercentage.value) / 100 || 0.60;
+        const monthlySales = parseFloat(elements.inputMonthlySales.value) || 0;
+        const rupturePercentage = parseFloat(elements.inputRupturePercentage.value) / 100 || 0.10;
+        const ruptureReductionPercentage = parseFloat(elements.inputRuptureReduction.value) / 100 || 0.50;
 
-    // --- CÁLCULO DA RUPTURA/VENDA PERDIDA ---
+        let excessStockValue = 0;
+        if (stockValue > 0) {
+            excessStockValue = elements.isTotalStockCheckbox.checked ? stockValue * excessPercentage : stockValue;
+        }
 
-    let ruptureAnnualLoss = 0;
-    let ruptureRecovery = 0;
+        const reduction20 = excessStockValue * 0.20;
+        const reduction30 = excessStockValue * 0.30;
+        const averageExcessReduction = excessStockValue * 0.25;
 
-    if (monthlySales > 0) {
-        // Calcular a perda anual de vendas por ruptura
-        const monthlyRuptureLoss = monthlySales * rupturePercentage;
-        ruptureAnnualLoss = monthlyRuptureLoss * 12;
+        let ruptureAnnualLoss = 0;
+        let ruptureRecovery = 0;
+        if (monthlySales > 0) {
+            ruptureAnnualLoss = (monthlySales * rupturePercentage) * 12;
+            ruptureRecovery = ruptureAnnualLoss * ruptureReductionPercentage;
+        }
+
+        const { totalAnnual } = calculatePlanCost();
+        const totalSavings = averageExcessReduction + ruptureRecovery;
+        const savings = totalSavings - totalAnnual;
+        const roiPercentage = totalAnnual > 0 ? (savings / totalAnnual) * 100 : 0;
+
+        // Atualizar DOM
+        elements.excessStockValue.textContent = formatCurrency(excessStockValue);
+        elements.reduction20Value.textContent = formatCurrency(reduction20);
+        elements.reduction30Value.textContent = formatCurrency(reduction30);
+        elements.ruptureLossValue.textContent = formatCurrency(ruptureAnnualLoss);
+        elements.ruptureRecoveryValue.textContent = formatCurrency(ruptureRecovery);
+        elements.excessSavings.textContent = formatCurrency(averageExcessReduction);
+        elements.ruptureSavings.textContent = formatCurrency(ruptureRecovery);
+        elements.totalSavings.textContent = formatCurrency(totalSavings);
+        elements.roiFinalPercentage.textContent = roiPercentage.toFixed(2) + '%';
+        elements.roiFinalPercentage.style.color = savings >= 0 ? '#28a745' : '#dc3545';
+
+        // Atualizar Barra
+        const totalBarValue = totalSavings + totalAnnual;
+        const savingsBarPercentage = totalBarValue > 0 ? (totalSavings / totalBarValue) * 100 : 0;
+        const costBarPercentage = totalBarValue > 0 ? (totalAnnual / totalBarValue) * 100 : 0;
+
+        elements.savingsBar.style.width = `${savingsBarPercentage}%`;
+        elements.costBar.style.width = `${costBarPercentage}%`;
+        elements.savingsBarLabel.textContent = `Economia: ${formatCurrency(totalSavings)}`;
+        elements.costBarLabel.textContent = `Custo Kenit: ${formatCurrency(totalAnnual)}`;
+    }
+
+    // --- INICIALIZAÇÃO ---
+    function init() {
+        cacheDOMElements();
         
-        // A economia é o percentual de redução que a Kenit pode alcançar sobre a perda total
-        ruptureRecovery = ruptureAnnualLoss * ruptureReductionPercentage;
-    }TOTAL ---
+        const allInputs = document.querySelectorAll('input');
+        allInputs.forEach(input => {
+            input.addEventListener('input', calculateROI);
+            input.addEventListener('change', calculateROI);
+        });
 
-    // 2. Obter o custo anual do Kenit
-    const { totalAnnual } = calculatePlanCost();
+        calculateROI(); // Cálculo inicial
+    }
 
-    // 3. Calcular a economia total (excesso + ruptura)
-    const totalSavings = averageExcessReduction + ruptureRecovery;
-    const savings = totalSavings - totalAnnual;
-    const roiPercentage = totalAnnual > 0 ? (savings / totalAnnual) * 100 : 0;
+    document.addEventListener('DOMContentLoaded', init);
 
-    // 4. Atualizar resultados na tela - Excesso de Estoque
-    document.getElementById('excess-stock-value').textContent = formatCurrency(excessStockValue);
-    document.getElementById('reduction-20-value').textContent = formatCurrency(reduction20);
-    document.getElementById('reduction-30-value').textContent = formatCurrency(reduction30);
-
-    // 5. Atualizar resultados na tela - Ruptura
-    document.getElementById('rupture-loss-value').textContent = formatCurrency(ruptureAnnualLoss);
-    document.getElementById('rupture-recovery-value').textContent = formatCurrency(ruptureRecovery);
-
-    // 6. Atualizar resultados na tela - Breakdown de Economia
-    document.getElementById('excess-savings').textContent = formatCurrency(averageExcessReduction);
-    document.getElementById('rupture-savings').textContent = formatCurrency(ruptureRecovery);
-    document.getElementById('total-savings').textContent = formatCurrency(totalSavings);
-
-    // 7. Atualizar ROI Final
-    document.getElementById('roi-final-percentage').textContent = roiPercentage.toFixed(2) + '%';
-    document.getElementById('roi-final-percentage').style.color = savings >= 0 ? '#28a745' : '#dc3545';
-
-    // 8. Atualizar a barra de comparação
-    const totalValue = totalSavings + totalAnnual;
-    const savingsPercentage = totalValue > 0 ? (totalSavings / totalValue) * 100 : 0;
-    const costPercentage = totalValue > 0 ? (totalAnnual / totalValue) * 100 : 0;
-
-    const savingsBar = document.getElementById('savings-bar');
-    const costBar = document.getElementById('cost-bar');
-    const savingsLabel = document.getElementById('savings-bar-label');
-    const costLabel = document.getElementById('cost-bar-label');
-
-    savingsBar.style.width = `${savingsPercentage}%`;
-    costBar.style.width = `${costPercentage}%`;
-    savingsLabel.textContent = `Economia: ${formatCurrency(totalSavings)}`;
-    costLabel.textContent = `Custo Kenit: ${formatCurrency(totalAnnual)}`;
-    
-    // Ajuste visual para casos extremos
-    if (savingsPercentage < 10) savingsLabel.textContent = '';
-    if (costPercentage < 10) costLabel.textContent = '';
-}
-
-// --- INICIALIZAÇÃO ---
-
-// Função que agrupa todos os cálculos e atualizações de tela
-function updateAllCalculations() {
-    calculatePlanCost();
-    calculateROI();
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Configurar eventos de input para o cálculo do plano
-    document.getElementById('input-cnpj').addEventListener('input', updateAllCalculations);
-    document.getElementById('input-sku').addEventListener('input', updateAllCalculations);
-    document.getElementById('input-users').addEventListener('input', updateAllCalculations);
-
-    // 2. Configurar eventos de input e checkbox para o cálculo do ROI
-    document.getElementById('input-stock-value').addEventListener('input', updateAllCalculations);
-    document.getElementById('input-excess-percentage').addEventListener('input', updateAllCalculations);
-    document.getElementById('is-total-stock-checkbox').addEventListener('change', updateAllCalculations);
-    document.getElementById('input-monthly-sales').addEventListener('input', updateAllCalculations);
-    document.getElementById('input-rupture-percentage').addEventListener('input', updateAllCalculations);
-    document.getElementById('input-rupture-reduction').addEventListener('input', updateAllCalculations);
-    document.getElementById('input-filiais').addEventListener('input', updateAllCalculations);
-
-    // 3. Calcular custos iniciais
-    updateAllCalculations();
-});
+})();
