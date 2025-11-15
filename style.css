@@ -48,6 +48,21 @@ p {
     background-color: #f9f9f9;
 }
 
+.subsection {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+.subsection h3 {
+    margin-top: 0;
+    color: #0056b3;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
 /* Input Grid */
 .input-grid {
     display: grid;
@@ -148,6 +163,46 @@ p {
     text-align: center;
 }
 
+.roi-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.breakdown-item {
+    padding: 15px;
+    border: 1px solid #b3e0ff;
+    border-radius: 4px;
+    background-color: #e6f7ff;
+}
+
+.breakdown-item h4 {
+    margin: 0 0 10px 0;
+    color: #0056b3;
+    font-size: 0.95em;
+}
+
+.breakdown-item p {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #004494;
+}
+
+.breakdown-item.total {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.breakdown-item.total h4 {
+    color: #155724;
+}
+
+.breakdown-item.total p {
+    color: #155724;
+}
+
 .roi-final-comparison {
     display: flex;
     align-items: center;
@@ -176,13 +231,11 @@ p {
 }
 
 .savings-bar {
-    background-color: #28a745;
-    /* Green */
+    background-color: #28a745; /* Green */
 }
 
 .cost-bar {
-    background-color: #dc3545;
-    /* Red */
+    background-color: #dc3545; /* Red */
 }
 
 .roi-final-value {
@@ -204,9 +257,7 @@ p {
 
 /* Responsividade */
 @media (max-width: 768px) {
-
-    .input-grid,
-    .results-grid {
+    .input-grid, .results-grid {
         grid-template-columns: 1fr;
     }
 
