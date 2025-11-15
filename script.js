@@ -164,22 +164,27 @@ function calculateROI() {
 
 // --- INICIALIZAÇÃO ---
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Configurar eventos de input para o cálculo do plano
-    document.getElementById('input-cnpj').addEventListener('input', calculatePlanCost);
-    document.getElementById('input-sku').addEventListener('input', calculatePlanCost);
-    document.getElementById('input-users').addEventListener('input', calculatePlanCost);
-
-    // 2. Configurar eventos de input e checkbox para o cálculo do ROI
-    document.getElementById('input-stock-value').addEventListener('input', calculateROI);
-    document.getElementById('input-excess-percentage').addEventListener('input', calculateROI);
-    document.getElementById('is-total-stock-checkbox').addEventListener('change', calculateROI);
-    document.getElementById('input-monthly-sales').addEventListener('input', calculateROI);
-    document.getElementById('input-rupture-percentage').addEventListener('input', calculateROI);
-    document.getElementById('input-rupture-reduction').addEventListener('input', calculateROI);
-    document.getElementById('input-filiais').addEventListener('input', calculateROI);
-
-    // 3. Calcular custos iniciais
+// Função que agrupa todos os cálculos e atualizações de tela
+function updateAllCalculations() {
     calculatePlanCost();
     calculateROI();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Configurar eventos de input para o cálculo do plano
+    document.getElementById('input-cnpj').addEventListener('input', updateAllCalculations);
+    document.getElementById('input-sku').addEventListener('input', updateAllCalculations);
+    document.getElementById('input-users').addEventListener('input', updateAllCalculations);
+
+    // 2. Configurar eventos de input e checkbox para o cálculo do ROI
+    document.getElementById('input-stock-value').addEventListener('input', updateAllCalculations);
+    document.getElementById('input-excess-percentage').addEventListener('input', updateAllCalculations);
+    document.getElementById('is-total-stock-checkbox').addEventListener('change', updateAllCalculations);
+    document.getElementById('input-monthly-sales').addEventListener('input', updateAllCalculations);
+    document.getElementById('input-rupture-percentage').addEventListener('input', updateAllCalculations);
+    document.getElementById('input-rupture-reduction').addEventListener('input', updateAllCalculations);
+    document.getElementById('input-filiais').addEventListener('input', updateAllCalculations);
+
+    // 3. Calcular custos iniciais
+    updateAllCalculations();
 });
