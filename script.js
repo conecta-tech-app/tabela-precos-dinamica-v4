@@ -11,7 +11,7 @@ const BASE_PLAN = {
     // Valores Adicionais
     add_user: 50,
     add_cnpj: 100,
-    add_sku: 250 // por 10.000 SKUs
+    add_sku: 300 // por 10.000 SKUs
 };
 
 // --- FUNÇÕES DE UTILIDADE ---
