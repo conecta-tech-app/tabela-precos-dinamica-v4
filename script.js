@@ -11,7 +11,7 @@ const BASE_PLAN = {
     // Valores Adicionais
     add_user: 50,
     add_cnpj: 100,
-    add_sku: 300 // por 10.000 SKUs
+    add_sku: 250 // por 10.000 SKUs
 };
 
 // --- FUNÇÕES DE UTILIDADE ---
@@ -97,8 +97,10 @@ function calculateROI() {
 
     // 1. Calcular a economia potencial por redução de excesso (20% e 30%)
     const reduction20 = excessStockValue * 0.20;
-    const reduction30 = excessStockValue * 0.30;
-    const averageExcessReduction = excessStockValue * 0.25; // Média de 25%
+    const monthlySales = parseFloat(monthlySalesInput.value) || 0;
+    const rupturePercentage = parseFloat(rupturePercentageInput.value) / 100 || 0.10;
+    const ruptureReductionPercentage = parseFloat(document.getElementById('input-rupture-reduction').value) / 100 || 0.50;
+    const numFiliais = parseInt(document.getElementById('input-filiais').value) || 1;
 
     // --- CÁLCULO DA RUPTURA/VENDA PERDIDA ---
 
@@ -110,11 +112,9 @@ function calculateROI() {
         const monthlyRuptureLoss = monthlySales * rupturePercentage;
         ruptureAnnualLoss = monthlyRuptureLoss * 12;
         
-        // Assumindo que a Kenit pode recuperar toda a venda perdida por ruptura
-        ruptureRecovery = ruptureAnnualLoss;
-    }
-
-    // --- CÁLCULO DO ROI TOTAL ---
+        // A economia é o percentual de redução que a Kenit pode alcançar sobre a perda total
+        ruptureRecovery = ruptureAnnualLoss * ruptureReductionPercentage;
+    }TOTAL ---
 
     // 2. Obter o custo anual do Kenit
     const { totalAnnual } = calculatePlanCost();
@@ -176,6 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('is-total-stock-checkbox').addEventListener('change', calculateROI);
     document.getElementById('input-monthly-sales').addEventListener('input', calculateROI);
     document.getElementById('input-rupture-percentage').addEventListener('input', calculateROI);
+    document.getElementById('input-rupture-reduction').addEventListener('input', calculateROI);
+    document.getElementById('input-filiais').addEventListener('input', calculateROI);
 
     // 3. Calcular custos iniciais
     calculatePlanCost();
