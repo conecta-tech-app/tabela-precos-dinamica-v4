@@ -13,8 +13,6 @@ const BASE_PLAN = {
 const SETUP_DILUTION_MONTHS = 12;
 const SETUP_DILUTION_VALUE = BASE_PLAN.setup_cost / SETUP_DILUTION_MONTHS;
 
-let selectedPricingOption = 'setup-pago'; // 'setup-pago' ou 'setup-zero'
-
 // --- ELEMENTOS DO DOM ---
 const elements = {};
 
@@ -29,13 +27,8 @@ function cacheDOMElements() {
     elements.totalSetupCost = document.getElementById('total-setup-cost');
     elements.totalAnnualCost = document.getElementById('total-annual-cost');
 
-    // Elementos de Comparação de Preços
-    elements.monthlyCostPago = document.getElementById('monthly-cost-pago');
-    elements.annualCostPago = document.getElementById('annual-cost-pago');
-    elements.monthlyCostZero = document.getElementById('monthly-cost-zero');
-    elements.annualCostZero = document.getElementById('annual-cost-zero');
-    elements.optionSetupPago = document.getElementById('option-setup-pago');
-    elements.optionSetupZero = document.getElementById('option-setup-zero');
+    // Elemento de Toggle de Setup
+    elements.setupToggleCheckbox = document.getElementById('setup-toggle-checkbox');
 
     // Inputs de ROI - Excesso
     elements.inputStockValue = document.getElementById('input-stock-value');
@@ -103,34 +96,22 @@ function calculatePlanCost() {
 
     elements.totalMonthlyCost.textContent = formatCurrency(monthlyCost);
     elements.totalSetupCost.textContent = formatCurrency(totalSetup);
-    elements.totalAnnualCost.textContent = formatCurrency(totalAnnual);
+    let finalSetupCost = totalSetup;
+    let finalMonthlyCost = monthlyCost;
+    let finalAnnualCost = totalAnnual;
 
-    return { totalAnnual, monthlyCost, totalSetup };
-}
+    if (!elements.setupToggleCheckbox.checked) {
+        // Plano Setup Zero (Diluído)
+        finalSetupCost = 0;
+        finalMonthlyCost = monthlyCost + SETUP_DILUTION_VALUE;
+        finalAnnualCost = finalMonthlyCost * 12;
+    }
 
-function calculateSetupZeroCost(monthlyCost) {
-    const monthlyCostZero = monthlyCost + SETUP_DILUTION_VALUE;
-    const totalSetupZero = 0;
-    const totalAnnualZero = monthlyCostZero * SETUP_DILUTION_MONTHS;
+    elements.totalMonthlyCost.textContent = formatCurrency(finalMonthlyCost);
+    elements.totalSetupCost.textContent = formatCurrency(finalSetupCost);
+    elements.totalAnnualCost.textContent = formatCurrency(finalAnnualCost);
 
-    return { totalAnnualZero, monthlyCostZero, totalSetupZero };
-}
-
-function updatePricingComparison(monthlyCost, totalAnnual) {
-    const { totalAnnualZero, monthlyCostZero } = calculateSetupZeroCost(monthlyCost);
-
-    elements.monthlyCostPago.textContent = formatCurrency(monthlyCost);
-    elements.annualCostPago.textContent = formatCurrency(totalAnnual);
-    elements.monthlyCostZero.textContent = formatCurrency(monthlyCostZero);
-    elements.annualCostZero.textContent = formatCurrency(totalAnnualZero);
-}
-
-window.selectPricingOption = function(option) {
-    selectedPricingOption = option;
-    elements.optionSetupPago.classList.remove('selected');
-    elements.optionSetupZero.classList.remove('selected');
-    document.getElementById(`option-${option}`).classList.add('selected');
-    calculateROI();
+    return { totalAnnual: finalAnnualCost };
 }
 
 function calculateROI() {
@@ -156,14 +137,8 @@ function calculateROI() {
         ruptureRecovery = ruptureAnnualLoss * ruptureReductionPercentage;
     }
 
-    const { totalAnnual, monthlyCost } = calculatePlanCost();
-    updatePricingComparison(monthlyCost, totalAnnual);
-
+    const { totalAnnual } = calculatePlanCost();
     let finalAnnualCost = totalAnnual;
-    if (selectedPricingOption === 'setup-zero') {
-        const { totalAnnualZero } = calculateSetupZeroCost(monthlyCost);
-        finalAnnualCost = totalAnnualZero;
-    }
 
     const totalSavings = averageExcessReduction + ruptureRecovery;
     const savings = totalSavings - finalAnnualCost;
@@ -202,8 +177,9 @@ function init() {
         input.addEventListener('change', calculateROI);
     });
 
-    // Garante que a opção Setup Pago esteja selecionada por padrão
-    selectPricingOption('setup-pago'); 
+    // Adiciona o evento de mudança ao novo checkbox
+    elements.setupToggleCheckbox.addEventListener('change', calculateROI);
+
     calculateROI(); // Cálculo inicial
 }
 
