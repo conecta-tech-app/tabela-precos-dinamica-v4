@@ -14,7 +14,6 @@
 
         <div class="section-box">
             <h2>1. Calcule o Custo do Plano Kenit</h2>
-            <h2>1. Calcule o Custo do Plano Kenit</h2>
             <div class="input-grid">
                 <div class="input-group">
                     <label for="input-cnpj">Quantidade de CNPJs:</label>
@@ -48,24 +47,9 @@
         
         <!-- Seção de Cálculo de ROI         </div>
 
-        <div class="section-box">
-            <h2>1.1. Comparativo de Precificação</h2>
-            <p>Selecione a opção de precificação para o cálculo do ROI.</p>
-            <div class="price-comparison-grid">
-                <div class="price-option selected" id="option-setup-pago">
-                    <h3>Plano Padrão (Setup Pago)</h3>
-                    <p>Custo Inicial: <span class="price-highlight">R$ 15.600,00</span></p>
-                    <p>Mensalidade: <span id="monthly-cost-pago">R$ 1.300,00</span></p>
-                    <p class="annual-cost">Custo Anual: <span id="annual-cost-pago">R$ 31.200,00</span></p>
-                    <button onclick="selectPricingOption('setup-pago')">Selecionar</button>
-                </div>
-                <div class="price-option" id="option-setup-zero">
-                    <h3>Plano Setup Zero (Diluído)</h3>
-                    <p>Custo Inicial: <span class="price-highlight">R$ 0,00</span></p>
-                    <p>Mensalidade: <span id="monthly-cost-zero">R$ 2.600,00</span></p>
-                    <p class="annual-cost">Custo Anual: <span id="annual-cost-zero">R$ 31.200,00</span></p>
-                    <button onclick="selectPricingOption('setup-zero')">Selecionar</button>
-                </div>
+        <div class="setup-toggle">
+                <input type="checkbox" id="setup-toggle-checkbox" checked>
+                <label for="setup-toggle-checkbox">Incluir Custo de Setup (R$ 15.600,00) - Desmarque para Plano Setup Zero (Diluído)</label>
             </div>
         </div>
 
