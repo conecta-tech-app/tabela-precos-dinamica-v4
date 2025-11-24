@@ -95,7 +95,6 @@ function calculatePlanCost() {
     const totalAnnual = totalSetup + (monthlyCost * 12);
 
     elements.totalMonthlyCost.textContent = formatCurrency(monthlyCost);
-    elements.totalSetupCost.textContent = formatCurrency(totalSetup);
     let finalSetupCost = totalSetup;
     let finalMonthlyCost = monthlyCost;
     let finalAnnualCost = totalAnnual;
