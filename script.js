@@ -10,6 +10,11 @@ const BASE_PLAN = {
     add_sku: 250 // por 10.000 SKUs
 };
 
+const SETUP_DILUTION_MONTHS = 12;
+const SETUP_DILUTION_VALUE = BASE_PLAN.setup_cost / SETUP_DILUTION_MONTHS;
+
+let selectedPricingOption = 'setup-pago'; // 'setup-pago' ou 'setup-zero'
+
 // --- ELEMENTOS DO DOM ---
 const elements = {};
 
@@ -23,6 +28,14 @@ function cacheDOMElements() {
     elements.totalMonthlyCost = document.getElementById('total-monthly-cost');
     elements.totalSetupCost = document.getElementById('total-setup-cost');
     elements.totalAnnualCost = document.getElementById('total-annual-cost');
+
+    // Elementos de Comparação de Preços
+    elements.monthlyCostPago = document.getElementById('monthly-cost-pago');
+    elements.annualCostPago = document.getElementById('annual-cost-pago');
+    elements.monthlyCostZero = document.getElementById('monthly-cost-zero');
+    elements.annualCostZero = document.getElementById('annual-cost-zero');
+    elements.optionSetupPago = document.getElementById('option-setup-pago');
+    elements.optionSetupZero = document.getElementById('option-setup-zero');
 
     // Inputs de ROI - Excesso
     elements.inputStockValue = document.getElementById('input-stock-value');
@@ -92,7 +105,32 @@ function calculatePlanCost() {
     elements.totalSetupCost.textContent = formatCurrency(totalSetup);
     elements.totalAnnualCost.textContent = formatCurrency(totalAnnual);
 
-    return { totalAnnual };
+    return { totalAnnual, monthlyCost, totalSetup };
+}
+
+function calculateSetupZeroCost(monthlyCost) {
+    const monthlyCostZero = monthlyCost + SETUP_DILUTION_VALUE;
+    const totalSetupZero = 0;
+    const totalAnnualZero = monthlyCostZero * SETUP_DILUTION_MONTHS;
+
+    return { totalAnnualZero, monthlyCostZero, totalSetupZero };
+}
+
+function updatePricingComparison(monthlyCost, totalAnnual) {
+    const { totalAnnualZero, monthlyCostZero } = calculateSetupZeroCost(monthlyCost);
+
+    elements.monthlyCostPago.textContent = formatCurrency(monthlyCost);
+    elements.annualCostPago.textContent = formatCurrency(totalAnnual);
+    elements.monthlyCostZero.textContent = formatCurrency(monthlyCostZero);
+    elements.annualCostZero.textContent = formatCurrency(totalAnnualZero);
+}
+
+window.selectPricingOption = function(option) {
+    selectedPricingOption = option;
+    elements.optionSetupPago.classList.remove('selected');
+    elements.optionSetupZero.classList.remove('selected');
+    document.getElementById(`option-${option}`).classList.add('selected');
+    calculateROI();
 }
 
 function calculateROI() {
@@ -118,10 +156,18 @@ function calculateROI() {
         ruptureRecovery = ruptureAnnualLoss * ruptureReductionPercentage;
     }
 
-    const { totalAnnual } = calculatePlanCost();
+    const { totalAnnual, monthlyCost } = calculatePlanCost();
+    updatePricingComparison(monthlyCost, totalAnnual);
+
+    let finalAnnualCost = totalAnnual;
+    if (selectedPricingOption === 'setup-zero') {
+        const { totalAnnualZero } = calculateSetupZeroCost(monthlyCost);
+        finalAnnualCost = totalAnnualZero;
+    }
+
     const totalSavings = averageExcessReduction + ruptureRecovery;
-    const savings = totalSavings - totalAnnual;
-    const roiPercentage = totalAnnual > 0 ? (savings / totalAnnual) * 100 : 0;
+    const savings = totalSavings - finalAnnualCost;
+    const roiPercentage = finalAnnualCost > 0 ? (savings / finalAnnualCost) * 100 : 0;
 
     // Atualizar DOM
     elements.excessStockValue.textContent = formatCurrency(excessStockValue);
@@ -143,7 +189,7 @@ function calculateROI() {
     elements.savingsBar.style.width = `${savingsBarPercentage}%`;
     elements.costBar.style.width = `${costBarPercentage}%`;
     elements.savingsBarLabel.textContent = `Economia: ${formatCurrency(totalSavings)}`;
-    elements.costBarLabel.textContent = `Custo Kenit: ${formatCurrency(totalAnnual)}`;
+    elements.costBarLabel.textContent = `Custo Kenit: ${formatCurrency(finalAnnualCost)}`;
 }
 
 // --- INICIALIZAÇÃO ---
@@ -156,6 +202,8 @@ function init() {
         input.addEventListener('change', calculateROI);
     });
 
+    // Garante que a opção Setup Pago esteja selecionada por padrão
+    selectPricingOption('setup-pago'); 
     calculateROI(); // Cálculo inicial
 }
 
