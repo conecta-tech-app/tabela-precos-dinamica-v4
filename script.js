@@ -5,7 +5,6 @@ const BASE_PLAN = {
     base_sku: 10000,
     base_users: 2,
     setup_cost: 15600,
-    fixed_setup_cost: 5000,
     add_user: 50,
     add_cnpj: 450, // Aumentado de 100 para 450
     add_sku: 250 // por 10.000 SKUs
@@ -28,13 +27,7 @@ function cacheDOMElements() {
     elements.totalSetupCost = document.getElementById('total-setup-cost');
     elements.totalAnnualCost = document.getElementById('total-annual-cost');
 
-    // Elemento de Toggle de Setup
-    elements.setupToggleCheckbox = document.getElementById('setup-toggle-checkbox');
 
-    // Elementos de ERP e Setup Fixo
-    elements.erpCheckbox = document.getElementById('erp-checkbox');
-    elements.fixedSetupCheckbox = document.getElementById('fixed-setup-checkbox');
-    elements.fixedSetupValue = document.getElementById('fixed-setup-value');
 
     // Inputs de ROI - Excesso
     elements.inputStockValue = document.getElementById('input-stock-value');
@@ -97,38 +90,17 @@ function calculatePlanCost() {
     }
 
     monthlyCost += additionalCost;
-    let totalSetup = BASE_PLAN.setup_cost;
-
-    // Adicionar custo de Setup Fixo se marcado
-    if (elements.fixedSetupCheckbox && elements.fixedSetupCheckbox.checked) {
-        const fixedSetupValue = parseFloat(elements.fixedSetupValue.value) || BASE_PLAN.fixed_setup_cost;
-        totalSetup += fixedSetupValue;
-    }
-
-    // Se ERP não está marcado, remover o custo de integração
-    if (elements.erpCheckbox && !elements.erpCheckbox.checked) {
-        totalSetup = 0;
-    }
-    const totalAnnual = totalSetup + (monthlyCost * 12);
-
-    elements.totalMonthlyCost.textContent = formatCurrency(monthlyCost);
-    let finalSetupCost = totalSetup;
-    let finalMonthlyCost = monthlyCost;
-    let finalAnnualCost = totalAnnual;
-
-    if (!elements.setupToggleCheckbox.checked) {
-        // Plano Setup Zero (Diluído)
-        finalSetupCost = 0;
-        const dilutionValue = totalSetup / SETUP_DILUTION_MONTHS;
-        finalMonthlyCost = monthlyCost + dilutionValue;
-        finalAnnualCost = finalMonthlyCost * 12;
-    }
+    
+    // Setup sempre diluido em 12 meses (Setup Zero)
+    const setupDilution = SETUP_DILUTION_VALUE;
+    const finalMonthlyCost = monthlyCost + setupDilution;
+    const totalAnnual = finalMonthlyCost * 12; // Sem adicionar setup, pois ja esta na mensalidade
 
     elements.totalMonthlyCost.textContent = formatCurrency(finalMonthlyCost);
-    elements.totalSetupCost.textContent = formatCurrency(finalSetupCost);
-    elements.totalAnnualCost.textContent = formatCurrency(finalAnnualCost);
+    elements.totalSetupCost.textContent = formatCurrency(BASE_PLAN.setup_cost); // Mostrar o valor total do setup
+    elements.totalAnnualCost.textContent = formatCurrency(totalAnnual);
 
-    return { totalAnnual: finalAnnualCost };
+    return { totalAnnual, monthlyCost: finalMonthlyCost };
 }
 
 function calculateROI() {
@@ -194,19 +166,7 @@ function init() {
         input.addEventListener('change', calculateROI);
     });
 
-    // Adiciona os eventos de mudança aos novos checkboxes
-    elements.setupToggleCheckbox.addEventListener('change', calculateROI);
-    if (elements.erpCheckbox) {
-        elements.erpCheckbox.addEventListener('change', calculateROI);
-    }
-    if (elements.fixedSetupCheckbox) {
-        elements.fixedSetupCheckbox.addEventListener('change', calculateROI);
-    }
-    if (elements.fixedSetupValue) {
-        elements.fixedSetupValue.addEventListener('input', calculateROI);
-    }
-
-    calculateROI(); // Cálculo inicial
+    calculateROI(); // Calculo inicial
 }
 
 document.addEventListener('DOMContentLoaded', init);
