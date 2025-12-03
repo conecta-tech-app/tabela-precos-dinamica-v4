@@ -1,6 +1,8 @@
 // --- CONSTANTES E DADOS ---
 const BASE_PLAN = {
-    base_monthly: 0, // Ajustado para 0, pois o valor de 1300 eh o Setup Diluido + Adicionais
+    base_monthly: 1084, // Valor base real (sem modulos)
+    module_cost: 216, // Custo do modulo Compras (1300 - 1084)
+    module_additional_cost: 216.80, // 20% de 1084
 
     base_cnpj: 1,
     base_sku: 10000,
@@ -11,12 +13,10 @@ const BASE_PLAN = {
     add_sku: 250 // por 10.000 SKUs
 };
 
-// Multiplicadores de Modulos (cada modulo adicional = +20%)
+// Multiplicadores de Modulos (cada modulo alem do primeiro = +20%)
 const MODULE_MULTIPLIER = 0.2;
 const EXPERIMENTATION_MULTIPLIER = 0.3; // +30% para experimentacao de 3 meses
 
-const SETUP_DILUTION_MONTHS = 12;
-const SETUP_DILUTION_VALUE = BASE_PLAN.setup_cost / SETUP_DILUTION_MONTHS;
 const NEW_ERP_INTEGRATION_COST = 15600; // Custo de nova integracao ERP
 
 // --- ELEMENTOS DO DOM ---
@@ -30,12 +30,11 @@ function cacheDOMElements() {
 
     // Outputs do Plano
     elements.totalMonthlyCost = document.getElementById("total-monthly-cost");
-    elements.totalSetupCost = document.getElementById("total-setup-cost");
     elements.totalAnnualCost = document.getElementById("total-annual-cost");
 
     // Elementos de Modulos
     elements.moduloCompras = document.getElementById("modulo-compras");
-    elements.moduloReposicao = document.getElementById("modulo-reposicao");
+    elements.moduloReposicao = document.getElementById("modulo-reposicao
     elements.moduloCotacao = document.getElementById("modulo-cotacao");
     
     // Elemento de Nova Integracao ERP
@@ -109,32 +108,29 @@ function calculatePlanCost() {
     // Calcular quantos modulos foram marcados
     let modulosCount = 0;
     if (elements.moduloCompras && elements.moduloCompras.checked) modulosCount++;
-    if (elements.moduloReposicao && elements.moduloReposicao.checked) modulosCount++;
+    if (elements.moduloReposicao && elements.moduloReposicao.checked && totalCnpj > 1) modulosCount++;
     if (elements.moduloCotacao && elements.moduloCotacao.checked) modulosCount++;
     
-    // Se nenhum modulo foi marcado, o custo base eh 0
-    let baseCost = modulosCount > 0 ? BASE_PLAN.base_monthly : 0;
+    // Custo mensal base (sem adicionais)
+    let finalMonthlyCost = BASE_PLAN.base_monthly;
     
-    // Aplicar multiplicador para modulos adicionais (cada modulo alem do primeiro = +20%)
-    let moduleMultiplier = 1.0;
-    if (modulosCount > 1) {
-        moduleMultiplier += (modulosCount - 1) * MODULE_MULTIPLIER;
+    // Adicionar custo do modulo Compras
+    if (elements.moduloCompras && elements.moduloCompras.checked) {
+        finalMonthlyCost += BASE_PLAN.module_cost;
     }
     
-    // Calcular custo mensal sem diluicao
-    let monthlyCostWithoutDilution = baseCost + (additionalCost * moduleMultiplier);
-    
-    // Setup sempre diluido em 12 meses (Setup Zero)
-    const setupDilution = SETUP_DILUTION_VALUE;
-    
-    // Custo mensal final (com diluicao)
-    let finalMonthlyCost = monthlyCostWithoutDilution + setupDilution;
-    
-    // Garantir que o custo mensal minimo seja 1300
-    const minMonthlyCost = 1300;
-    if (finalMonthlyCost < minMonthlyCost) {
-        finalMonthlyCost = minMonthlyCost;
+    // Adicionar custo do modulo Cotacao
+    if (elements.moduloCotacao && elements.moduloCotacao.checked) {
+        finalMonthlyCost += BASE_PLAN.module_additional_cost;
     }
+    
+    // Adicionar custo do modulo Reposicao (se CNPJ > 1)
+    if (elements.moduloReposicao && elements.moduloReposicao.checked && totalCnpj > 1) {
+        finalMonthlyCost += BASE_PLAN.module_additional_cost;
+    }
+    
+    // Adicionar custo dos adicionais (CNPJ, SKU, Usuário)
+    finalMonthlyCost += additionalCost;
     
     // Aplicar multiplicador de experimentacao se marcado
     let experimentationMultiplier = 1.0;
