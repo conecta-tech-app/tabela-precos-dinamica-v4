@@ -10,12 +10,9 @@ const BASE_PLAN = {
     add_sku: 250 // por 10.000 SKUs
 };
 
-// Multiplicadores de Modulos
-const MODULE_MULTIPLIERS = {
-    compras: 0.0,      // Base (sem multiplicador adicional)
-    reposicao: 0.2,    // +20% nos adicionais
-    cotacao: 0.3       // +30% nos adicionais
-};
+// Multiplicadores de Modulos (cada modulo adicional = +20%)
+const MODULE_MULTIPLIER = 0.2;
+const EXPERIMENTATION_MULTIPLIER = 0.3; // +30% para experimentacao de 3 meses
 
 const SETUP_DILUTION_MONTHS = 12;
 const SETUP_DILUTION_VALUE = BASE_PLAN.setup_cost / SETUP_DILUTION_MONTHS;
@@ -42,6 +39,9 @@ function cacheDOMElements() {
     
     // Elemento de Nova Integracao ERP
     elements.novaIntegracaoCheckbox = document.getElementById('nova-integracao-checkbox');
+    
+    // Elemento de Experimentacao
+    elements.experimentacaoCheckbox = document.getElementById('experimentacao-checkbox');
 
     // Inputs de ROI - Excesso
     elements.inputStockValue = document.getElementById('input-stock-value');
@@ -103,24 +103,33 @@ function calculatePlanCost() {
         additionalCost += (totalUsers - BASE_PLAN.base_users) * BASE_PLAN.add_user;
     }
 
-    // Calcular o multiplicador de modulos
-    let moduleMultiplier = 1.0; // Multiplicador base
-    if (elements.moduloCompras && elements.moduloCompras.checked) {
-        moduleMultiplier += MODULE_MULTIPLIERS.compras;
+    // Calcular quantos modulos foram marcados (alem do primeiro)
+    let modulosCount = 0;
+    if (elements.moduloCompras && elements.moduloCompras.checked) modulosCount++;
+    if (elements.moduloReposicao && elements.moduloReposicao.checked) modulosCount++;
+    if (elements.moduloCotacao && elements.moduloCotacao.checked) modulosCount++;
+    
+    // Se nenhum modulo foi marcado, o custo base eh 0 (nao aplicar)
+    let baseCost = modulosCount > 0 ? BASE_PLAN.base_monthly : 0;
+    
+    // Aplicar multiplicador para modulos adicionais (cada modulo alem do primeiro = +20%)
+    let moduleMultiplier = 1.0;
+    if (modulosCount > 1) {
+        moduleMultiplier += (modulosCount - 1) * MODULE_MULTIPLIER;
     }
-    if (elements.moduloReposicao && elements.moduloReposicao.checked) {
-        moduleMultiplier += MODULE_MULTIPLIERS.reposicao;
+    
+    // Aplicar multiplicador de experimentacao se marcado
+    let experimentationMultiplier = 1.0;
+    if (elements.experimentacaoCheckbox && elements.experimentacaoCheckbox.checked) {
+        experimentationMultiplier = 1.0 + EXPERIMENTATION_MULTIPLIER;
     }
-    if (elements.moduloCotacao && elements.moduloCotacao.checked) {
-        moduleMultiplier += MODULE_MULTIPLIERS.cotacao;
-    }
-
-    // Aplicar o multiplicador aos adicionais
-    monthlyCost = BASE_PLAN.base_monthly + (additionalCost * moduleMultiplier);
+    
+    // Calcular custo mensal final
+    let finalMonthlyCost = (baseCost + (additionalCost * moduleMultiplier)) * experimentationMultiplier;
     
     // Setup sempre diluido em 12 meses (Setup Zero)
     const setupDilution = SETUP_DILUTION_VALUE;
-    const finalMonthlyCost = monthlyCost + setupDilution;
+    finalMonthlyCost += setupDilution;
     
     // Custo anual com setup diluido
     let totalAnnual = finalMonthlyCost * 12;
@@ -131,7 +140,7 @@ function calculatePlanCost() {
     }
 
     elements.totalMonthlyCost.textContent = formatCurrency(finalMonthlyCost);
-    elements.totalSetupCost.textContent = formatCurrency(BASE_PLAN.setup_cost); // Mostrar o valor total do setup
+    elements.totalSetupCost.textContent = formatCurrency(BASE_PLAN.setup_cost);
     elements.totalAnnualCost.textContent = formatCurrency(totalAnnual);
 
     return { totalAnnual, monthlyCost: finalMonthlyCost };
@@ -203,20 +212,3 @@ function init() {
     // Adiciona os eventos de mudanca aos checkboxes de modulos
     if (elements.moduloCompras) {
         elements.moduloCompras.addEventListener('change', calculateROI);
-    }
-    if (elements.moduloReposicao) {
-        elements.moduloReposicao.addEventListener('change', calculateROI);
-    }
-    if (elements.moduloCotacao) {
-        elements.moduloCotacao.addEventListener('change', calculateROI);
-    }
-    
-    // Adiciona o evento de mudanca ao checkbox de nova integracao
-    if (elements.novaIntegracaoCheckbox) {
-        elements.novaIntegracaoCheckbox.addEventListener('change', calculateROI);
-    }
-
-    calculateROI(); // Calculo inicial
-}
-
-document.addEventListener('DOMContentLoaded', init);
