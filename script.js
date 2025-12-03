@@ -1,29 +1,18 @@
 // --- CONSTANTES E DADOS ---
 const BASE_PLAN = {
-    base_monthly: 1084, // Valor base real (sem modulos)
-    module_cost: 216, // Custo do modulo Compras (1300 - 1084)
-    module_additional_cost: 216.80, // 20% de 1084
-    
-    base_cnpj: 1,
-    base_sku: 10000,
-    base_users: 2,
-    setup_cost: 15600,
-    add_user: 50,
-    add_cnpj: 450, // Aumentado de 100 para 450
-    add_sku: 250 // por 10.000 SKUs
-};
+    base_monthly_no_modules: 1084.00, // Valor base sem módulos
+    module_compras_cost: 216.00, // Custo do módulo Compras (1300 - 1084)
+    module_additional_cost: 216.80, // Custo dos módulos Cotação e Reposição (20% de 1084)
 
     base_cnpj: 1,
     base_sku: 10000,
     base_users: 2,
     setup_cost: 15600,
     add_user: 50,
-    add_cnpj: 450, // Aumentado de 100 para 450
-    add_sku: 250 // por 10.000 SKUs
+    add_cnpj: 450, // Custo adicional por CNPJ
+    add_sku: 250 // Custo adicional por 10.000 SKUs
 };
 
-// Multiplicadores de Modulos (cada modulo alem do primeiro = +20%)
-const MODULE_MULTIPLIER = 0.2;
 const EXPERIMENTATION_MULTIPLIER = 0.3; // +30% para experimentacao de 3 meses
 
 const NEW_ERP_INTEGRATION_COST = 15600; // Custo de nova integracao ERP
@@ -43,7 +32,7 @@ function cacheDOMElements() {
 
     // Elementos de Modulos
     elements.moduloCompras = document.getElementById("modulo-compras");
-    elements.moduloReposicao = document.getElementById("modulo-reposicao
+    elements.moduloReposicao = document.getElementById("modulo-reposicao");
     elements.moduloCotacao = document.getElementById("modulo-cotacao");
     
     // Elemento de Nova Integracao ERP
@@ -97,9 +86,9 @@ function formatCurrency(value) {
 
 // --- LÓGICA DE CÁLCULO ---
 function calculatePlanCost() {
-    const totalCnpj = parseInt(elements.inputCnpj.value) || 0;
-    const totalSku = parseInt(elements.inputSku.value) || 0;
-    const totalUsers = parseInt(elements.inputUsers.value) || 0;
+    const totalCnpj = parseFloat(elements.inputCnpj.value) || 0;
+    const totalSku = parseFloat(elements.inputSku.value) || 0;
+    const totalUsers = parseFloat(elements.inputUsers.value) || 0;
 
     let additionalCost = 0;
 
@@ -114,21 +103,12 @@ function calculatePlanCost() {
         additionalCost += (totalUsers - BASE_PLAN.base_users) * BASE_PLAN.add_user;
     }
 
-    // Calcular quantos modulos foram marcados
-    let modulosCount = 0;
-    if (elements.moduloCompras && elements.moduloCompras.checked) modulosCount++;
-    if (elements.moduloReposicao && elements.moduloReposicao.checked && totalCnpj > 1) modulosCount++;
-    if (elements.moduloCotacao && elements.moduloCotacao.checked) modulosCount++;
-    
-    // Se nenhum modulo foi marcado, o custo base eh 0
-    let baseCost = modulosCount > 0 ? BASE_PLAN.base_monthly : 0;
-    
     // Custo mensal base (sem adicionais)
-    let finalMonthlyCost = BASE_PLAN.base_monthly;
+    let finalMonthlyCost = BASE_PLAN.base_monthly_no_modules;
     
-    // Adicionar custo do modulo Compras
+    // Adicionar custo do modulo Compras (sempre selecionado por padrão)
     if (elements.moduloCompras && elements.moduloCompras.checked) {
-        finalMonthlyCost += BASE_PLAN.module_cost;
+        finalMonthlyCost += BASE_PLAN.module_compras_cost;
     }
     
     // Adicionar custo do modulo Cotacao
@@ -143,9 +123,6 @@ function calculatePlanCost() {
     
     // Adicionar custo dos adicionais (CNPJ, SKU, Usuário)
     finalMonthlyCost += additionalCost;
-    
-    // Custo mensal final (com diluicao)
-    let finalMonthlyCost = (baseCost * moduleMultiplier) + additionalCost;
     
     // Aplicar multiplicador de experimentacao se marcado
     let experimentationMultiplier = 1.0;
@@ -164,16 +141,18 @@ function calculatePlanCost() {
         totalAnnual = finalMonthlyCost * 3;
     }
     
+    // Se Pagamento a Vista estiver marcado, o desconto de 20% é aplicado ao custo anual (12 meses)
+    if (elements.avistaCheckbox && elements.avistaCheckbox.checked && !elements.experimentacaoCheckbox.checked) {
+        totalAnnual = finalMonthlyCost * 12 * 0.80; // 20% de desconto
+    }
+    
     // Adicionar custo de nova integracao ERP se marcado
     if (elements.novaIntegracaoCheckbox && elements.novaIntegracaoCheckbox.checked) {
         totalAnnual += NEW_ERP_INTEGRATION_COST;
     }
     
-    // Aplicar desconto de 20% se Pagamento a Vista estiver marcado
+    // O desconto de 20% para pagamento à vista já foi aplicado acima, se aplicável.
     let finalAnnualCost = totalAnnual;
-    if (elements.avistaCheckbox && elements.avistaCheckbox.checked) {
-        finalAnnualCost = totalAnnual * 0.80; // 20% de desconto
-    }
 
     elements.totalMonthlyCost.textContent = formatCurrency(finalMonthlyCost);
     elements.totalAnnualCost.textContent = formatCurrency(finalAnnualCost);
@@ -253,7 +232,10 @@ function init() {
     });
 
     // Adiciona os eventos de mudanca aos checkboxes de modulos
+    // O módulo Compras deve estar sempre marcado e desabilitado
     if (elements.moduloCompras) {
+        elements.moduloCompras.checked = true;
+        elements.moduloCompras.disabled = true;
         elements.moduloCompras.addEventListener("change", calculateROI);
     }
     if (elements.moduloReposicao) {
