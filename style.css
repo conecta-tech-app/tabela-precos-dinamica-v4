@@ -340,9 +340,10 @@ p {
 /* Estilos para os checkboxes de módulos */
 .module-checkboxes {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
     margin-top: 15px;
+    margin-bottom: 20px;
 }
 
 .checkbox-item {
@@ -364,5 +365,4 @@ p {
 .checkbox-item label {
     cursor: pointer;
     margin: 0;
-    font-weight: normal;
-}
+  
