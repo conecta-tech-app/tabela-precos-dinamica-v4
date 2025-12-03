@@ -43,6 +43,9 @@ function cacheDOMElements() {
     
     // Elemento de Experimentacao
     elements.experimentacaoCheckbox = document.getElementById("experimentacao-checkbox");
+    
+    // Elemento de Pagamento a Vista
+    elements.avistaCheckbox = document.getElementById("avista-checkbox");
 
     // Inputs de ROI - Excesso
     elements.inputStockValue = document.getElementById("input-stock-value");
@@ -142,19 +145,37 @@ function calculatePlanCost() {
     // Aplicar o multiplicador de experimentacao ao custo final
     finalMonthlyCost *= experimentationMultiplier;
     
-    // Custo anual com setup diluido
+    // Custo anual base (sem desconto)
     let totalAnnual = finalMonthlyCost * 12;
+    
+    // Se Experimentacao estiver marcado, o custo total é trimestral (3 meses)
+    if (elements.experimentacaoCheckbox && elements.experimentacaoCheckbox.checked) {
+        totalAnnual = finalMonthlyCost * 3;
+    }
     
     // Adicionar custo de nova integracao ERP se marcado
     if (elements.novaIntegracaoCheckbox && elements.novaIntegracaoCheckbox.checked) {
         totalAnnual += NEW_ERP_INTEGRATION_COST;
     }
+    
+    // Aplicar desconto de 20% se Pagamento a Vista estiver marcado
+    let finalAnnualCost = totalAnnual;
+    if (elements.avistaCheckbox && elements.avistaCheckbox.checked) {
+        finalAnnualCost = totalAnnual * 0.80; // 20% de desconto
+    }
 
     elements.totalMonthlyCost.textContent = formatCurrency(finalMonthlyCost);
-    elements.totalSetupCost.textContent = formatCurrency(BASE_PLAN.setup_cost);
-    elements.totalAnnualCost.textContent = formatCurrency(totalAnnual);
+    elements.totalAnnualCost.textContent = formatCurrency(finalAnnualCost);
+    
+    // Atualiza o rótulo do Custo Total Anual/Trimestral
+    const annualLabel = document.querySelector("#total-annual-cost").previousElementSibling;
+    if (elements.experimentacaoCheckbox && elements.experimentacaoCheckbox.checked) {
+        annualLabel.textContent = "Custo Total Trimestral";
+    } else {
+        annualLabel.textContent = "Custo Total Anual";
+    }
 
-    return { totalAnnual, monthlyCost: finalMonthlyCost };
+    return { totalAnnual: finalAnnualCost, monthlyCost: finalMonthlyCost };
 }
 
 function calculateROI() {
@@ -239,6 +260,11 @@ function init() {
     // Adiciona o evento de mudanca ao checkbox de experimentacao
     if (elements.experimentacaoCheckbox) {
         elements.experimentacaoCheckbox.addEventListener("change", calculateROI);
+    }
+    
+    // Adiciona o evento de mudanca ao checkbox de pagamento a vista
+    if (elements.avistaCheckbox) {
+        elements.avistaCheckbox.addEventListener("change", calculateROI);
     }
 
     calculateROI(); // Calculo inicial
