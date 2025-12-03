@@ -336,3 +336,33 @@ p {
         flex-direction: column;
     }
 }
+
+/* Estilos para os checkboxes de módulos */
+.module-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.checkbox-item label {
+    cursor: pointer;
+    margin: 0;
+    font-weight: normal;
+}
