@@ -14,7 +14,27 @@
 
         <div class="section-box">
             <h2>1. Calcule o Custo do Plano Kenit</h2>
-
+            <div class="setup-toggle">
+                <h3>Selecione os Módulos:</h3>
+                <div class="module-checkboxes">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="modulo-compras" checked>
+                        <label for="modulo-compras">Compras (Base)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="modulo-reposicao">
+                        <label for="modulo-reposicao">Reposição (+20% nos adicionais)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="modulo-cotacao">
+                        <label for="modulo-cotacao">Cotação (+30% nos adicionais)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="setup-toggle">
+                <input type="checkbox" id="nova-integracao-checkbox">
+                <label for="nova-integracao-checkbox"><strong>Nova Integração ERP (R$ 15.600,00)</strong></label>
+            </div>
             <div class="input-grid">
                 <div class="input-group">
                     <label for="input-cnpj">Quantidade de CNPJs:</label>
