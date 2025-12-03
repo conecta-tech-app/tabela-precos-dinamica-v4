@@ -3,6 +3,15 @@ const BASE_PLAN = {
     base_monthly: 1084, // Valor base real (sem modulos)
     module_cost: 216, // Custo do modulo Compras (1300 - 1084)
     module_additional_cost: 216.80, // 20% de 1084
+    
+    base_cnpj: 1,
+    base_sku: 10000,
+    base_users: 2,
+    setup_cost: 15600,
+    add_user: 50,
+    add_cnpj: 450, // Aumentado de 100 para 450
+    add_sku: 250 // por 10.000 SKUs
+};
 
     base_cnpj: 1,
     base_sku: 10000,
@@ -111,6 +120,9 @@ function calculatePlanCost() {
     if (elements.moduloReposicao && elements.moduloReposicao.checked && totalCnpj > 1) modulosCount++;
     if (elements.moduloCotacao && elements.moduloCotacao.checked) modulosCount++;
     
+    // Se nenhum modulo foi marcado, o custo base eh 0
+    let baseCost = modulosCount > 0 ? BASE_PLAN.base_monthly : 0;
+    
     // Custo mensal base (sem adicionais)
     let finalMonthlyCost = BASE_PLAN.base_monthly;
     
@@ -131,6 +143,9 @@ function calculatePlanCost() {
     
     // Adicionar custo dos adicionais (CNPJ, SKU, Usuário)
     finalMonthlyCost += additionalCost;
+    
+    // Custo mensal final (com diluicao)
+    let finalMonthlyCost = (baseCost * moduleMultiplier) + additionalCost;
     
     // Aplicar multiplicador de experimentacao se marcado
     let experimentationMultiplier = 1.0;
