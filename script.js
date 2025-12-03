@@ -1,6 +1,7 @@
 // --- CONSTANTES E DADOS ---
 const BASE_PLAN = {
-    base_monthly: 1300,
+    base_monthly: 0, // Ajustado para 0, pois o valor de 1300 eh o Setup Diluido + Adicionais
+
     base_cnpj: 1,
     base_sku: 10000,
     base_users: 2,
@@ -23,62 +24,62 @@ const elements = {};
 
 function cacheDOMElements() {
     // Inputs do Plano
-    elements.inputCnpj = document.getElementById('input-cnpj');
-    elements.inputSku = document.getElementById('input-sku');
-    elements.inputUsers = document.getElementById('input-users');
+    elements.inputCnpj = document.getElementById("input-cnpj");
+    elements.inputSku = document.getElementById("input-sku");
+    elements.inputUsers = document.getElementById("input-users");
 
     // Outputs do Plano
-    elements.totalMonthlyCost = document.getElementById('total-monthly-cost');
-    elements.totalSetupCost = document.getElementById('total-setup-cost');
-    elements.totalAnnualCost = document.getElementById('total-annual-cost');
+    elements.totalMonthlyCost = document.getElementById("total-monthly-cost");
+    elements.totalSetupCost = document.getElementById("total-setup-cost");
+    elements.totalAnnualCost = document.getElementById("total-annual-cost");
 
     // Elementos de Modulos
-    elements.moduloCompras = document.getElementById('modulo-compras');
-    elements.moduloReposicao = document.getElementById('modulo-reposicao');
-    elements.moduloCotacao = document.getElementById('modulo-cotacao');
+    elements.moduloCompras = document.getElementById("modulo-compras");
+    elements.moduloReposicao = document.getElementById("modulo-reposicao");
+    elements.moduloCotacao = document.getElementById("modulo-cotacao");
     
     // Elemento de Nova Integracao ERP
-    elements.novaIntegracaoCheckbox = document.getElementById('nova-integracao-checkbox');
+    elements.novaIntegracaoCheckbox = document.getElementById("nova-integracao-checkbox");
     
     // Elemento de Experimentacao
-    elements.experimentacaoCheckbox = document.getElementById('experimentacao-checkbox');
+    elements.experimentacaoCheckbox = document.getElementById("experimentacao-checkbox");
 
     // Inputs de ROI - Excesso
-    elements.inputStockValue = document.getElementById('input-stock-value');
-    elements.inputExcessPercentage = document.getElementById('input-excess-percentage');
-    elements.isTotalStockCheckbox = document.getElementById('is-total-stock-checkbox');
+    elements.inputStockValue = document.getElementById("input-stock-value");
+    elements.inputExcessPercentage = document.getElementById("input-excess-percentage");
+    elements.isTotalStockCheckbox = document.getElementById("is-total-stock-checkbox");
 
     // Outputs de ROI - Excesso
-    elements.excessStockValue = document.getElementById('excess-stock-value');
-    elements.reduction20Value = document.getElementById('reduction-20-value');
-    elements.reduction30Value = document.getElementById('reduction-30-value');
+    elements.excessStockValue = document.getElementById("excess-stock-value");
+    elements.reduction20Value = document.getElementById("reduction-20-value");
+    elements.reduction30Value = document.getElementById("reduction-30-value");
 
     // Inputs de ROI - Ruptura
-    elements.inputMonthlySales = document.getElementById('input-monthly-sales');
-    elements.inputRupturePercentage = document.getElementById('input-rupture-percentage');
-    elements.inputRuptureReduction = document.getElementById('input-rupture-reduction');
-    elements.inputFiliais = document.getElementById('input-filiais');
+    elements.inputMonthlySales = document.getElementById("input-monthly-sales");
+    elements.inputRupturePercentage = document.getElementById("input-rupture-percentage");
+    elements.inputRuptureReduction = document.getElementById("input-rupture-reduction");
+    elements.inputFiliais = document.getElementById("input-filiais");
 
     // Outputs de ROI - Ruptura
-    elements.ruptureLossValue = document.getElementById('rupture-loss-value');
-    elements.ruptureRecoveryValue = document.getElementById('rupture-recovery-value');
+    elements.ruptureLossValue = document.getElementById("rupture-loss-value");
+    elements.ruptureRecoveryValue = document.getElementById("rupture-recovery-value");
 
     // Outputs de ROI - Resumo
-    elements.excessSavings = document.getElementById('excess-savings');
-    elements.ruptureSavings = document.getElementById('rupture-savings');
-    elements.totalSavings = document.getElementById('total-savings');
-    elements.roiFinalPercentage = document.getElementById('roi-final-percentage');
-    elements.savingsBar = document.getElementById('savings-bar');
-    elements.costBar = document.getElementById('cost-bar');
-    elements.savingsBarLabel = document.getElementById('savings-bar-label');
-    elements.costBarLabel = document.getElementById('cost-bar-label');
+    elements.excessSavings = document.getElementById("excess-savings");
+    elements.ruptureSavings = document.getElementById("rupture-savings");
+    elements.totalSavings = document.getElementById("total-savings");
+    elements.roiFinalPercentage = document.getElementById("roi-final-percentage");
+    elements.savingsBar = document.getElementById("savings-bar");
+    elements.costBar = document.getElementById("cost-bar");
+    elements.savingsBarLabel = document.getElementById("savings-bar-label");
+    elements.costBarLabel = document.getElementById("cost-bar-label");
 }
 
 // --- FUNÇÕES DE UTILIDADE ---
 function formatCurrency(value) {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
+    return new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
         minimumFractionDigits: 2
     }).format(value);
 }
@@ -89,7 +90,6 @@ function calculatePlanCost() {
     const totalSku = parseInt(elements.inputSku.value) || 0;
     const totalUsers = parseInt(elements.inputUsers.value) || 0;
 
-    let monthlyCost = BASE_PLAN.base_monthly;
     let additionalCost = 0;
 
     if (totalCnpj > BASE_PLAN.base_cnpj) {
@@ -103,13 +103,13 @@ function calculatePlanCost() {
         additionalCost += (totalUsers - BASE_PLAN.base_users) * BASE_PLAN.add_user;
     }
 
-    // Calcular quantos modulos foram marcados (alem do primeiro)
+    // Calcular quantos modulos foram marcados
     let modulosCount = 0;
     if (elements.moduloCompras && elements.moduloCompras.checked) modulosCount++;
     if (elements.moduloReposicao && elements.moduloReposicao.checked) modulosCount++;
     if (elements.moduloCotacao && elements.moduloCotacao.checked) modulosCount++;
     
-    // Se nenhum modulo foi marcado, o custo base eh 0 (nao aplicar)
+    // Se nenhum modulo foi marcado, o custo base eh 0
     let baseCost = modulosCount > 0 ? BASE_PLAN.base_monthly : 0;
     
     // Aplicar multiplicador para modulos adicionais (cada modulo alem do primeiro = +20%)
@@ -118,18 +118,29 @@ function calculatePlanCost() {
         moduleMultiplier += (modulosCount - 1) * MODULE_MULTIPLIER;
     }
     
+    // Calcular custo mensal sem diluicao
+    let monthlyCostWithoutDilution = baseCost + (additionalCost * moduleMultiplier);
+    
+    // Setup sempre diluido em 12 meses (Setup Zero)
+    const setupDilution = SETUP_DILUTION_VALUE;
+    
+    // Custo mensal final (com diluicao)
+    let finalMonthlyCost = monthlyCostWithoutDilution + setupDilution;
+    
+    // Garantir que o custo mensal minimo seja 1300
+    const minMonthlyCost = 1300;
+    if (finalMonthlyCost < minMonthlyCost) {
+        finalMonthlyCost = minMonthlyCost;
+    }
+    
     // Aplicar multiplicador de experimentacao se marcado
     let experimentationMultiplier = 1.0;
     if (elements.experimentacaoCheckbox && elements.experimentacaoCheckbox.checked) {
         experimentationMultiplier = 1.0 + EXPERIMENTATION_MULTIPLIER;
     }
     
-    // Calcular custo mensal final
-    let finalMonthlyCost = (baseCost + (additionalCost * moduleMultiplier)) * experimentationMultiplier;
-    
-    // Setup sempre diluido em 12 meses (Setup Zero)
-    const setupDilution = SETUP_DILUTION_VALUE;
-    finalMonthlyCost += setupDilution;
+    // Aplicar o multiplicador de experimentacao ao custo final
+    finalMonthlyCost *= experimentationMultiplier;
     
     // Custo anual com setup diluido
     let totalAnnual = finalMonthlyCost * 12;
@@ -185,8 +196,8 @@ function calculateROI() {
     elements.excessSavings.textContent = formatCurrency(averageExcessReduction);
     elements.ruptureSavings.textContent = formatCurrency(ruptureRecovery);
     elements.totalSavings.textContent = formatCurrency(totalSavings);
-    elements.roiFinalPercentage.textContent = roiPercentage.toFixed(2) + '%';
-    elements.roiFinalPercentage.style.color = savings >= 0 ? '#28a745' : '#dc3545';
+    elements.roiFinalPercentage.textContent = roiPercentage.toFixed(2) + "%";
+    elements.roiFinalPercentage.style.color = savings >= 0 ? "#28a745" : "#dc3545";
 
     // Atualizar Barra
     const totalBarValue = totalSavings + totalAnnual;
@@ -203,12 +214,34 @@ function calculateROI() {
 function init() {
     cacheDOMElements();
     
-    const allInputs = document.querySelectorAll('input');
+    const allInputs = document.querySelectorAll("input");
     allInputs.forEach(input => {
-        input.addEventListener('input', calculateROI);
-        input.addEventListener('change', calculateROI);
+        input.addEventListener("input", calculateROI);
+        input.addEventListener("change", calculateROI);
     });
 
     // Adiciona os eventos de mudanca aos checkboxes de modulos
     if (elements.moduloCompras) {
-        elements.moduloCompras.addEventListener('change', calculateROI);
+        elements.moduloCompras.addEventListener("change", calculateROI);
+    }
+    if (elements.moduloReposicao) {
+        elements.moduloReposicao.addEventListener("change", calculateROI);
+    }
+    if (elements.moduloCotacao) {
+        elements.moduloCotacao.addEventListener("change", calculateROI);
+    }
+    
+    // Adiciona o evento de mudanca ao checkbox de nova integracao
+    if (elements.novaIntegracaoCheckbox) {
+        elements.novaIntegracaoCheckbox.addEventListener("change", calculateROI);
+    }
+    
+    // Adiciona o evento de mudanca ao checkbox de experimentacao
+    if (elements.experimentacaoCheckbox) {
+        elements.experimentacaoCheckbox.addEventListener("change", calculateROI);
+    }
+
+    calculateROI(); // Calculo inicial
+}
+
+document.addEventListener("DOMContentLoaded", init);
