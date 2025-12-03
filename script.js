@@ -10,8 +10,16 @@ const BASE_PLAN = {
     add_sku: 250 // por 10.000 SKUs
 };
 
+// Multiplicadores de Modulos
+const MODULE_MULTIPLIERS = {
+    compras: 0.0,      // Base (sem multiplicador adicional)
+    reposicao: 0.2,    // +20% nos adicionais
+    cotacao: 0.3       // +30% nos adicionais
+};
+
 const SETUP_DILUTION_MONTHS = 12;
 const SETUP_DILUTION_VALUE = BASE_PLAN.setup_cost / SETUP_DILUTION_MONTHS;
+const NEW_ERP_INTEGRATION_COST = 15600; // Custo de nova integracao ERP
 
 // --- ELEMENTOS DO DOM ---
 const elements = {};
@@ -27,7 +35,13 @@ function cacheDOMElements() {
     elements.totalSetupCost = document.getElementById('total-setup-cost');
     elements.totalAnnualCost = document.getElementById('total-annual-cost');
 
-
+    // Elementos de Modulos
+    elements.moduloCompras = document.getElementById('modulo-compras');
+    elements.moduloReposicao = document.getElementById('modulo-reposicao');
+    elements.moduloCotacao = document.getElementById('modulo-cotacao');
+    
+    // Elemento de Nova Integracao ERP
+    elements.novaIntegracaoCheckbox = document.getElementById('nova-integracao-checkbox');
 
     // Inputs de ROI - Excesso
     elements.inputStockValue = document.getElementById('input-stock-value');
@@ -89,12 +103,32 @@ function calculatePlanCost() {
         additionalCost += (totalUsers - BASE_PLAN.base_users) * BASE_PLAN.add_user;
     }
 
-    monthlyCost += additionalCost;
+    // Calcular o multiplicador de modulos
+    let moduleMultiplier = 1.0; // Multiplicador base
+    if (elements.moduloCompras && elements.moduloCompras.checked) {
+        moduleMultiplier += MODULE_MULTIPLIERS.compras;
+    }
+    if (elements.moduloReposicao && elements.moduloReposicao.checked) {
+        moduleMultiplier += MODULE_MULTIPLIERS.reposicao;
+    }
+    if (elements.moduloCotacao && elements.moduloCotacao.checked) {
+        moduleMultiplier += MODULE_MULTIPLIERS.cotacao;
+    }
+
+    // Aplicar o multiplicador aos adicionais
+    monthlyCost = BASE_PLAN.base_monthly + (additionalCost * moduleMultiplier);
     
     // Setup sempre diluido em 12 meses (Setup Zero)
     const setupDilution = SETUP_DILUTION_VALUE;
     const finalMonthlyCost = monthlyCost + setupDilution;
-    const totalAnnual = finalMonthlyCost * 12; // Sem adicionar setup, pois ja esta na mensalidade
+    
+    // Custo anual com setup diluido
+    let totalAnnual = finalMonthlyCost * 12;
+    
+    // Adicionar custo de nova integracao ERP se marcado
+    if (elements.novaIntegracaoCheckbox && elements.novaIntegracaoCheckbox.checked) {
+        totalAnnual += NEW_ERP_INTEGRATION_COST;
+    }
 
     elements.totalMonthlyCost.textContent = formatCurrency(finalMonthlyCost);
     elements.totalSetupCost.textContent = formatCurrency(BASE_PLAN.setup_cost); // Mostrar o valor total do setup
@@ -165,6 +199,22 @@ function init() {
         input.addEventListener('input', calculateROI);
         input.addEventListener('change', calculateROI);
     });
+
+    // Adiciona os eventos de mudanca aos checkboxes de modulos
+    if (elements.moduloCompras) {
+        elements.moduloCompras.addEventListener('change', calculateROI);
+    }
+    if (elements.moduloReposicao) {
+        elements.moduloReposicao.addEventListener('change', calculateROI);
+    }
+    if (elements.moduloCotacao) {
+        elements.moduloCotacao.addEventListener('change', calculateROI);
+    }
+    
+    // Adiciona o evento de mudanca ao checkbox de nova integracao
+    if (elements.novaIntegracaoCheckbox) {
+        elements.novaIntegracaoCheckbox.addEventListener('change', calculateROI);
+    }
 
     calculateROI(); // Calculo inicial
 }
